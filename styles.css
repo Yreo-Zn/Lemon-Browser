@@ -1,0 +1,1004 @@
+:root {
+    --accent-color: #6496ff;
+    --accent-color-light: rgba(100, 150, 255, 0.15);
+    --accent-color-medium: rgba(100, 150, 255, 0.6);
+    --accent-color-dark: rgba(100, 150, 255, 0.8);
+
+    /* Animation Refinement Variables */
+    --ease-spring: cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    --trans-fast: 0.2s var(--ease-out);
+    --trans-normal: 0.3s var(--ease-out);
+    --trans-spring: 0.5s var(--ease-spring);
+}
+
+/* Accessibility: Reduced and Disabled Animations */
+body.reduce-motion *,
+body.reduce-motion {
+    transition-duration: 0.1s !important;
+    animation-duration: 0.1s !important;
+    animation-iteration-count: 1 !important;
+}
+
+body.no-animations *,
+body.no-animations {
+    transition: none !important;
+    animation: none !important;
+}
+
+/* CUSTOM SCROLLBARS */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(150, 150, 150, 0.2);
+    border-radius: 10px;
+    transition: background var(--trans-normal);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-color-medium);
+}
+
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    width: 100vw;
+    background: transparent !important;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    /* Centra horizontalmente */
+    align-items: flex-end;
+    /* Pega al fondo */
+    font-family: sans-serif;
+    user-select: none;
+}
+
+
+.search-wrapper {
+    position: relative;
+    width: 600px;
+    margin-bottom: 200px;
+    /* Separación del suelo */
+    display: flex;
+    flex-direction: column;
+    pointer-events: auto;
+    z-index: 100;
+    transition: transform var(--trans-spring);
+}
+
+.search-wrapper.with-preview {
+    transform: translateX(-400px);
+}
+
+.glass {
+    background: rgba(30, 30, 30, 0.95);
+    /* backdrop-filter: blur(20px); CAUSA PARPADEO */
+    /* -webkit-backdrop-filter: blur(20px); */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+#results-area {
+    width: 100%;
+    margin-bottom: -1px;
+    /* Unión perfecta */
+}
+
+#suggestions {
+    width: 100%;
+    border-radius: 20px 20px 0 0;
+    padding: 5px 0;
+    overflow: hidden;
+}
+
+.input-container {
+    width: 100%;
+    padding: 10px 20px;
+    /* Reduced padding slightly to accommodate flex items better if needed */
+    border-radius: 30px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    -webkit-app-region: no-drag;
+}
+
+.input-container.active-mode {
+    border-radius: 0 0 30px 30px;
+}
+
+input {
+    flex-grow: 1;
+    /* Take available space */
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 18px;
+    outline: none;
+    margin-right: 10px;
+    /* Space between input and button */
+}
+
+/* SEARCH ENGINE SELECTOR */
+#search-engine-selector {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+#current-engine-btn,
+#settings-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+#settings-btn {
+    margin-left: 10px;
+}
+
+#current-engine-btn:hover,
+#settings-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+#current-engine-btn img,
+#settings-btn svg {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+#engine-dropdown {
+    position: absolute;
+    top: 45px;
+    /* Offset from button */
+    right: 0;
+    width: 180px;
+    border-radius: 15px;
+    overflow: hidden;
+    z-index: 1000;
+    padding: 5px 0;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-10px);
+    transition: opacity var(--trans-fast),
+        transform var(--trans-fast);
+    display: block !important;
+}
+
+/* Use a specific class to show it, overriding the generic hidden if needed, 
+   but since we use .hidden { display: none } generally, we can just toggle that class off 
+   and use show class for animation if we prefer. 
+   Let's just align with the existing system handling via JS classes.
+*/
+#engine-dropdown.visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+
+.engine-option {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    cursor: pointer;
+    color: white;
+    transition: background 0.2s;
+}
+
+.engine-option:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.engine-option img {
+    width: 20px;
+    height: 20px;
+    margin-right: 10px;
+    border-radius: 50%;
+}
+
+/* LA PREVIEW: Ahora es absoluta para no mover la barra */
+#preview-container {
+    position: absolute;
+    left: 610px;
+    /* A la derecha del buscador */
+    bottom: 0;
+    /* Alineado abajo con la barra */
+    width: 800px;
+    height: 750px;
+    /* Alargado para ver el contenido completo dentro de la nueva altura de ventana */
+    border-radius: 20px;
+    padding: 0;
+    opacity: 0;
+    visibility: hidden;
+    /* Evita renderizado cuando no está activo */
+    transform: translateX(-20px);
+    transition: opacity var(--trans-normal), transform var(--trans-normal), visibility var(--trans-normal);
+    pointer-events: auto;
+    overflow: hidden;
+}
+
+
+#preview-container.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(0);
+}
+
+webview {
+    width: 100%;
+    height: 100%;
+    border-radius: 15px;
+    background: white;
+}
+
+.suggestion-item {
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: white;
+    cursor: pointer;
+    transition: all var(--trans-fast);
+    border-left: 3px solid transparent;
+}
+
+.suggestion-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-left-color: var(--accent-color-medium);
+    padding-left: 23px;
+}
+
+.suggestion-item.active {
+    background: var(--accent-color-light);
+    border-left-color: var(--accent-color-dark);
+    padding-left: 23px;
+}
+
+.hidden {
+    display: none !important;
+}
+
+#main-browser-container,
+#settings-container {
+    position: fixed;
+    top: 30px;
+    /* Reducido para ajustarse mejor a Snap Layouts */
+    left: 0;
+    width: 100vw;
+    height: calc(100vh - 30px);
+    background: white;
+    z-index: 50;
+    display: flex;
+    border-radius: 20px 20px 0 0;
+    /* Toque de ventana modernizada */
+    overflow: hidden;
+}
+
+#main-browser-container webview,
+#settings-container webview {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+/* WINDOW CONTROLS */
+#window-controls-container {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: auto;
+    height: 50px;
+    z-index: 10000;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding-right: 15px;
+    pointer-events: auto;
+    -webkit-app-region: no-drag;
+}
+
+#title-bar-drag-area {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 10px;
+    /* Extremely narrow to not block content but allow Snap */
+    -webkit-app-region: drag;
+    z-index: 10001;
+    /* Above almost everything but not blocking buttons */
+    pointer-events: auto;
+}
+
+#window-controls {
+    display: flex;
+    gap: 12px;
+    padding: 8px 15px;
+    border-radius: 25px;
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: all var(--trans-spring);
+    pointer-events: none;
+    background: rgba(30, 30, 30, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    /* Windows 11 Snap Layouts Compatibility */
+    margin-right: 15px;
+}
+
+#window-controls-container:hover #window-controls {
+    opacity: 1;
+    transform: translateY(5px);
+    pointer-events: auto;
+}
+
+.win-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.win-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+}
+
+.win-btn svg {
+    pointer-events: none;
+}
+
+#close-btn:hover {
+    background: rgba(255, 60, 60, 0.8);
+}
+
+#window-controls-container.on-bar {
+    position: absolute;
+    top: auto;
+    bottom: -1px;
+    /* Alinear con el contenedor de la barra */
+    right: -55px;
+    width: 45px;
+    height: 45px;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#window-controls-container.on-bar #window-controls {
+    opacity: 1 !important;
+    transform: none !important;
+    padding: 8px;
+    background: rgba(30, 30, 30, 0.95);
+    pointer-events: auto;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+}
+
+#window-controls-container.on-bar #min-btn,
+#window-controls-container.on-bar #max-btn {
+    display: none;
+}
+
+
+/* ACTIVE SEARCHES DOTS */
+#active-searches-container {
+    position: fixed;
+    bottom: 25px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 12px;
+    z-index: 1000;
+    pointer-events: auto;
+    -webkit-app-region: no-drag;
+}
+
+.search-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--accent-color);
+    cursor: pointer;
+    transition: all var(--trans-normal);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.search-dot:hover {
+    transform: scale(1.4);
+    box-shadow: 0 0 15px var(--accent-color-medium);
+}
+
+.search-dot.active {
+    transform: scale(1.3);
+    background: white;
+    box-shadow: 0 0 20px var(--accent-color);
+}
+
+.search-dot img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* CLOSE SEARCH TOP LEFT */
+#close-search-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100px;
+    height: 50px;
+    z-index: 10000;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    padding-left: 20px;
+    pointer-events: auto;
+    -webkit-app-region: no-drag;
+}
+
+#close-search-inner {
+    display: flex;
+    padding: 8px 15px;
+    border-radius: 25px;
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: all var(--trans-spring);
+    pointer-events: none;
+    background: rgba(30, 30, 30, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#close-search-container:hover #close-search-inner {
+    opacity: 1;
+    transform: translateY(5px);
+    pointer-events: auto;
+}
+
+/* DRAG PILL CENTER */
+#drag-pill-container {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 400px;
+    height: 60px;
+    z-index: 10000;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    /* Cambio a flex-start */
+    pointer-events: auto;
+    overflow: hidden;
+    /* Asegurar que no asome antes de tiempo */
+}
+
+#drag-pill {
+    position: absolute;
+    top: -40px;
+    /* Escondido arriba */
+    display: flex;
+    padding: 12px 60px;
+    border-radius: 25px;
+    opacity: 0;
+    transition: all var(--trans-spring);
+    pointer-events: auto;
+    background: rgba(30, 30, 30, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    cursor: grab;
+    -webkit-app-region: no-drag;
+    /* Revert native drag to fix hover */
+}
+
+#drag-pill svg {
+    pointer-events: none;
+    /* No bloquear el drag */
+}
+
+#drag-pill-container:hover #drag-pill {
+    opacity: 1;
+    top: 8px;
+    /* Deslizar hacia abajo */
+}
+
+#drag-pill:active {
+    cursor: grabbing;
+}
+
+/* CONTEXT MENU */
+#dot-context-menu {
+    position: fixed;
+    width: 200px;
+    border-radius: 15px;
+    padding: 8px;
+    z-index: 2000;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+}
+
+.context-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    color: white;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    font-size: 14px;
+}
+
+.context-item:hover {
+    background: var(--accent-color-light);
+    color: var(--accent-color);
+}
+
+.context-item svg {
+    opacity: 0.7;
+}
+
+.context-item:hover svg {
+    opacity: 1;
+    stroke: var(--accent-color);
+}
+
+/* LIQUID GLASS THEME - Premium Refinement */
+body.liquid-glass {
+    --liquid-bg: rgba(255, 255, 255, 0.12);
+    --liquid-border: rgba(255, 255, 255, 0.35);
+    --liquid-blur: 50px;
+}
+
+/* Glass elements with deep refraction and vibrancy */
+body.liquid-glass .glass {
+    background: var(--liquid-bg) !important;
+    border: 1px solid var(--liquid-border) !important;
+    backdrop-filter: blur(var(--liquid-blur)) saturate(250%) brightness(1.2) url(#liquid-distortion) !important;
+    -webkit-backdrop-filter: blur(var(--liquid-blur)) saturate(250%) brightness(1.2) url(#liquid-distortion) !important;
+    box-shadow:
+        0 15px 35px rgba(0, 0, 0, 0.15),
+        inset 0 0 15px rgba(255, 255, 255, 0.4),
+        inset 0 10px 20px rgba(255, 255, 255, 0.2),
+        inset 0 -5px 15px rgba(0, 0, 0, 0.05) !important;
+    color: white !important;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), backdrop-filter 0.3s ease;
+}
+
+body.liquid-glass .input-container {
+    overflow: visible !important;
+    padding: 10px 20px !important;
+}
+
+body.liquid-glass #dot-context-menu {
+    position: fixed !important;
+    overflow: hidden;
+    padding: 10px;
+}
+
+body.liquid-glass #engine-dropdown {
+    position: absolute !important;
+    overflow: hidden;
+}
+
+body.liquid-glass input,
+body.liquid-glass span,
+body.liquid-glass div,
+body.liquid-glass button {
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+body.liquid-glass .suggestion-item:hover,
+body.liquid-glass .engine-option:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+}
+
+body.liquid-glass .search-dot {
+    background: rgba(255, 255, 255, 0.6) !important;
+    backdrop-filter: blur(10px) url(#liquid-distortion);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+body.liquid-glass .search-dot.active {
+    background: white !important;
+    box-shadow: 0 0 20px var(--accent-color);
+    transform: scale(1.4);
+}
+
+.liquid-filter-svg {
+    position: absolute;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+    visibility: hidden;
+}
+
+/* TUTORIAL STYLES */
+#tutorial-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 20000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    pointer-events: auto;
+}
+
+#tutorial-overlay:not(.hidden) {
+    opacity: 1;
+}
+
+#tutorial-card {
+    width: 500px;
+    padding: 30px;
+    border-radius: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    animation: slideUpTutorial var(--trans-spring);
+}
+
+@keyframes slideUpTutorial {
+    from {
+        opacity: 0;
+        transform: translateY(40px) scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+#tutorial-content {
+    color: white;
+    text-align: center;
+    min-height: 250px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+#tutorial-content h2 {
+    font-size: 28px;
+    margin-bottom: 15px;
+    background: linear-gradient(45deg, white, var(--accent-color));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+#tutorial-content p {
+    font-size: 16px;
+    line-height: 1.6;
+    opacity: 0.9;
+}
+
+.tutorial-step-img {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent-color-light);
+    border-radius: 25px;
+    color: var(--accent-color);
+}
+
+.tutorial-shortcut-list {
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.tutorial-shortcut-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+}
+
+.kbd {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-family: monospace;
+    font-size: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+#tutorial-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.glass-btn {
+    padding: 10px 25px;
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 500;
+}
+
+.glass-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.glass-btn.accent {
+    background: var(--accent-color);
+    border: none;
+    box-shadow: 0 4px 15px var(--accent-color-light);
+}
+
+.glass-btn.accent:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px var(--accent-color-medium);
+}
+
+#tutorial-dots {
+    display: flex;
+    gap: 8px;
+}
+
+.tutorial-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    transition: all 0.3s;
+}
+
+.tutorial-dot.active {
+    background: var(--accent-color);
+    width: 20px;
+    border-radius: 4px;
+}
+
+/* SAVED PAGES MENU */
+#saved-pages-container {
+    display: flex;
+    gap: 10px;
+    padding: 10px;
+    transition: all var(--trans-spring);
+    z-index: 10002;
+    pointer-events: auto;
+}
+
+#menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 10001;
+    /* Debajo del menú, encima de todo lo demás */
+    background: transparent;
+    pointer-events: auto;
+}
+
+#saved-pages-container.hidden {
+    display: none !important;
+}
+
+/* Horizontal mode (Home) */
+#saved-pages-container.horizontal {
+    position: fixed;
+    bottom: 270px;
+    left: 50%;
+    transform: translateX(-50%);
+    flex-direction: row;
+    justify-content: center;
+    width: 600px;
+    background: transparent;
+    padding: 0;
+    box-shadow: none;
+    border: none;
+    opacity: 1;
+}
+
+#saved-pages-container.horizontal .saved-page-item {
+    background: rgba(30, 30, 30, 0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Vertical mode (Pages Open) */
+#saved-pages-container.vertical {
+    position: fixed;
+    top: 60px;
+    left: 20px;
+    flex-direction: column;
+    width: 250px;
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+    background: rgba(30, 30, 30, 0.95);
+    border-radius: 20px;
+    padding: 15px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    transform: translateX(-320px);
+    opacity: 0;
+}
+
+#saved-pages-container.vertical.deployed {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.saved-page-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 15px;
+    border-radius: 12px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: rgba(255, 255, 255, 0.05);
+    margin-bottom: 8px;
+    flex-shrink: 0;
+}
+
+.remove-bookmark {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    opacity: 0;
+    transition: all 0.2s;
+}
+
+.saved-page-item:hover .remove-bookmark {
+    opacity: 1;
+}
+
+.remove-bookmark:hover {
+    background: #ff4444;
+    color: white;
+}
+
+.saved-page-item:hover {
+    background: var(--accent-color-medium);
+    transform: translateX(5px);
+}
+
+.saved-page-item img {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    border-radius: 4px;
+}
+
+.saved-page-item span {
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Trigger for popup layout */
+#saved-pages-trigger {
+    position: fixed;
+    top: -50px;
+    /* Shifted UP significantly to create a large safe zone */
+    left: 140px;
+    width: 170px;
+    height: 200px;
+    /* Huge height to allow free movement */
+    z-index: 10001;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    pointer-events: auto;
+    transition: top var(--trans-spring);
+    /* Clip starting from 50px down, meaning the top 50px are hidden, but everything below is visible */
+    clip-path: inset(50px -100px -100px -100px);
+}
+
+body.is-maximized #saved-pages-trigger {
+    top: -50px;
+    /* Aligned to 0 visually */
+}
+
+body:not(.is-maximized) #saved-pages-trigger {
+    top: -20px;
+    /* Aligned to 30px visually (-50px + 30px displacement) */
+}
+
+#saved-pages-trigger-inner {
+    background: rgba(30, 30, 30, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 25px;
+    padding: 5px 15px;
+    /* Height approx 28px */
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+    transform: translateY(15px);
+    /* Resting position: visually hidden behind the 50px clip path */
+    opacity: 0.5;
+    transition: transform var(--trans-spring), opacity 0.4s ease, background 0.4s ease, box-shadow 0.4s ease;
+    cursor: grab;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    user-select: none;
+    backdrop-filter: blur(10px);
+}
+
+#saved-pages-trigger-inner svg {
+    width: 13px;
+    height: 13px;
+    opacity: 0.9;
+}
+
+#saved-pages-trigger-inner:active {
+    cursor: grabbing;
+}
+
+#saved-pages-trigger:hover #saved-pages-trigger-inner {
+    transform: translateY(50px);
+    /* Moves down significantly to be fully visible */
+    opacity: 1;
+    background: var(--accent-color-dark);
+    box-shadow: 0 8px 30px var(--accent-color-medium);
+    transition: transform var(--trans-spring), opacity 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
+}

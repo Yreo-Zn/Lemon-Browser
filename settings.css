@@ -1,0 +1,487 @@
+/* Close Button */
+#close-btn {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    cursor: pointer;
+    z-index: 1000;
+    transition: background 0.2s, transform 0.2s;
+    color: white;
+}
+
+#close-btn:hover {
+    background: rgba(255, 0, 0, 0.4);
+    transform: rotate(90deg);
+}
+
+:root {
+    --accent-color: #bb86fc;
+    --accent-color-light: rgba(187, 134, 252, 0.1);
+    --accent-color-medium: rgba(187, 134, 252, 0.6);
+    --accent-color-dark: rgba(187, 134, 252, 0.8);
+}
+
+/* CUSTOM SCROLLBARS */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(30, 30, 30, 0.5);
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-color-medium);
+    border: 0px solid transparent;
+}
+
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #121212;
+    color: #ffffff;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 250px;
+    background-color: #1e1e1e;
+    border-right: 1px solid #333;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar h2 {
+    font-size: 1.5rem;
+    margin-bottom: 30px;
+    color: var(--accent-color);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.nav-item {
+    padding: 12px 15px;
+    margin-bottom: 5px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s, color 0.3s;
+    color: #aaaaaa;
+    font-weight: 500;
+}
+
+.nav-item:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: #fff;
+}
+
+.nav-item.active {
+    background-color: var(--accent-color-light);
+    color: var(--accent-color);
+}
+
+/* Main Content */
+.content {
+    flex: 1;
+    padding: 40px 60px;
+    overflow-y: auto;
+}
+
+.section {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.section.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+h1 {
+    font-size: 2rem;
+    margin-bottom: 30px;
+    border-bottom: 1px solid #333;
+    padding-bottom: 15px;
+}
+
+/* Form Groups */
+.form-group {
+    margin-bottom: 25px;
+    background: #1e1e1e;
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #333;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: bold;
+    color: #e0e0e0;
+}
+
+.form-group p {
+    font-size: 0.9rem;
+    color: #888;
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+
+/* Controls */
+select,
+input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    background-color: #2c2c2c;
+    border: 1px solid #444;
+    border-radius: 6px;
+    color: white;
+    font-size: 1rem;
+    outline: none;
+}
+
+select:focus,
+input[type="text"]:focus,
+input[type="number"]:focus {
+    border-color: var(--accent-color);
+}
+
+.setting-number-input {
+    background-color: #2c2c2c;
+    border: 1px solid #444;
+    border-radius: 6px;
+    color: white;
+    padding: 5px 10px;
+    font-size: 1rem;
+    outline: none;
+    width: 60px;
+    margin-left: 10px;
+}
+
+/* Toggle Switch */
+.switch {
+    display: inline-block;
+    position: relative;
+    width: 50px;
+    height: 24px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #444;
+    transition: .4s;
+    border-radius: 24px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked+.slider {
+    background-color: var(--accent-color);
+}
+
+input:checked+.slider:before {
+    transform: translateX(26px);
+}
+
+.toggle-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Buttons */
+.btn {
+    padding: 10px 20px;
+    background-color: var(--accent-color);
+    color: #000;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: opacity 0.3s;
+}
+
+.btn:hover {
+    opacity: 0.9;
+}
+
+.btn-danger {
+    background-color: #cf6679;
+    color: #000;
+}
+
+/* Footer/About */
+.about-info {
+    text-align: center;
+    color: #888;
+    margin-top: 50px;
+}
+
+/* Color Picker Styles */
+.color-picker-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+#accent-color-picker {
+    width: 100px;
+    height: 50px;
+    border: 2px solid #444;
+    border-radius: 8px;
+    cursor: pointer;
+    background: transparent;
+    padding: 0;
+}
+
+#accent-color-picker::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+#accent-color-picker::-webkit-color-swatch {
+    border: none;
+    border-radius: 6px;
+}
+
+.color-presets {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.color-preset {
+    width: 40px;
+    height: 40px;
+    border: 2px solid #444;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    padding: 0;
+}
+
+.color-preset:hover {
+    transform: scale(1.1);
+    border-color: #fff;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+.color-preset.active {
+    border-color: #fff;
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+    transform: scale(1.15);
+}
+
+/* Shortcut Inputs */
+.shortcut-input {
+    background: #2c2c2c;
+    border: 1px solid #444;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 1rem;
+    color: var(--accent-color);
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+    outline: none;
+    min-width: 200px;
+    display: inline-block;
+}
+
+.shortcut-input:focus {
+    border-color: var(--accent-color);
+    background: #333;
+    box-shadow: 0 0 10px var(--accent-color-light);
+    transform: translateY(-2px);
+}
+
+.shortcut-input:hover {
+    background: #333;
+    border-color: #666;
+}
+
+#reset-shortcuts-btn {
+    margin-top: 20px;
+    background: transparent;
+    border: 1px solid #444;
+    color: #888;
+}
+
+#reset-shortcuts-btn:hover {
+    border-color: #666;
+    color: #ccc;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* ==========================================================================
+   EXTENSIONES
+   ========================================================================== */
+
+.drop-zone {
+    border: 2px dashed rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 40px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.6);
+    transition: all 0.3s ease;
+    margin-bottom: 20px;
+    cursor: pointer;
+}
+
+.drop-zone.drag-over {
+    border-color: var(--accent-color);
+    background: var(--accent-color-light);
+    color: var(--accent-color);
+}
+
+.drop-zone ion-icon {
+    font-size: 48px;
+    margin-bottom: 10px;
+}
+
+.extensions-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 15px;
+}
+
+.extension-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: background 0.2s ease;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.extension-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.extension-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.extension-icon {
+    width: 32px;
+    height: 32px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: var(--accent-color);
+}
+
+.extension-info {
+    flex: 1;
+    overflow: hidden;
+}
+
+.extension-name {
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.extension-version {
+    font-size: 0.8em;
+    opacity: 0.6;
+}
+
+.extension-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 5px;
+}
+
+.extension-btn {
+    flex: 1;
+    padding: 6px;
+    border: none;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    cursor: pointer;
+    font-size: 0.85em;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.extension-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.extension-btn.delete {
+    background: rgba(239, 83, 80, 0.1);
+    color: #ef5350;
+    flex: 0 0 auto;
+    padding: 6px 10px;
+}
+
+.extension-btn.delete:hover {
+    background: rgba(239, 83, 80, 0.2);
+}

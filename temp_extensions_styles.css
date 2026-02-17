@@ -1,0 +1,118 @@
+/* ==========================================================================
+   EXTENSIONES
+   ========================================================================== */
+
+.drop-zone {
+    border: 2px dashed rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 40px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.6);
+    transition: all 0.3s ease;
+    margin-bottom: 20px;
+    cursor: pointer;
+}
+
+.drop-zone.drag-over {
+    border-color: var(--accent-color);
+    background: var(--accent-color-light);
+    color: var(--accent-color);
+}
+
+.drop-zone ion-icon {
+    font-size: 48px;
+    margin-bottom: 10px;
+}
+
+.extensions-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 15px;
+}
+
+.extension-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: background 0.2s ease;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.extension-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.extension-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.extension-icon {
+    width: 32px;
+    height: 32px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: var(--accent-color);
+}
+
+.extension-info {
+    flex: 1;
+    overflow: hidden;
+}
+
+.extension-name {
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.extension-version {
+    font-size: 0.8em;
+    opacity: 0.6;
+}
+
+.extension-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 5px;
+}
+
+.extension-btn {
+    flex: 1;
+    padding: 6px;
+    border: none;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    cursor: pointer;
+    font-size: 0.85em;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.extension-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.extension-btn.delete {
+    background: rgba(239, 83, 80, 0.1);
+    color: #ef5350;
+    flex: 0 0 auto;
+    padding: 6px 10px;
+}
+
+.extension-btn.delete:hover {
+    background: rgba(239, 83, 80, 0.2);
+}

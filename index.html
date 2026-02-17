@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Lemon Browser</title>
+    <link rel="icon" href="Icon.png">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+    <div class="search-wrapper">
+        <div id="title-bar-drag-area"></div>
+
+
+        <div id="results-area" class="hidden">
+            <div id="suggestions" class="glass"></div>
+
+            <div id="preview-container" class="glass">
+                <webview id="preview-view" src="about:blank" allowpopups></webview>
+            </div>
+        </div>
+
+        <div id="bar-container" class="input-container glass">
+            <input type="text" id="search-bar" placeholder="Escribe para buscar..." autofocus autocomplete="off">
+            <div id="search-engine-selector">
+                <div id="current-engine-btn" title="Cambiar buscador">
+                    <img id="current-engine-icon" src="https://www.google.com/favicon.ico" alt="Buscador">
+                </div>
+                <div id="engine-dropdown" class="glass hidden">
+                    <!-- Javascript will populate this -->
+                </div>
+            </div>
+            <div id="settings-btn" title="Configuración">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 512 512">
+                    <path fill="white"
+                        d="M262.29 192.31a64 64 0 1057.4 57.4 64.13 64.13 0 00-57.4-57.4zM416.39 256a154.34 154.34 0 01-1.53 20.79l45.21 35.46a6.56 6.56 0 011.59 8.35l-42.85 74.24a6.56 6.56 0 01-8.12 2.76l-53.29-21.46a155.07 155.07 0 01-36.06 20.94l-8.08 56.71a6.56 6.56 0 01-6.51 5.61h-85.7a6.56 6.56 0 01-6.51-5.61l-8-56.68a156.41 156.41 0 01-36.09-20.94l-53.28 21.46a6.56 6.56 0 01-8.12-2.76l-42.85-74.24a6.56 6.56 0 011.59-8.35l45.2-35.47a154.42 154.42 0 010-41.59L72.26 203.21a6.56 6.56 0 01-1.59-8.35l42.85-74.24a6.56 6.56 0 018.12-2.76l53.26 21.49A155.43 155.43 0 01211 118.4l8-56.71a6.56 6.56 0 016.51-5.61h85.7a6.56 6.56 0 016.51 5.61l8.08 56.71a155.43 155.43 0 0136.06 20.94l53.29-21.49a6.56 6.56 0 018.12 2.76l42.85 74.24a6.56 6.56 0 01-1.59 8.35l-45.21 35.46a154.34 154.34 0 011.53 20.79z" />
+                </svg>
+            </div>
+        </div>
+
+    </div>
+    <div id="menu-overlay" class="hidden"></div>
+
+    <div id="saved-pages-container" class="hidden">
+        <!-- JavaScript will populate this -->
+    </div>
+
+    <div id="main-browser-container" class="hidden"></div>
+
+    <div id="settings-container" class="hidden">
+        <webview id="settings-webview" src="about:blank" webpreferences="nodeIntegration=yes, contextIsolation=no">
+        </webview>
+    </div>
+
+    <div id="window-controls-container">
+        <div id="window-controls" class="glass">
+            <div id="min-btn" class="win-btn" title="Minimizar">
+                <svg width="10" height="1" viewBox="0 0 10 1">
+                    <rect width="10" height="1" fill="white" />
+                </svg>
+            </div>
+            <div id="max-btn" class="win-btn" title="Maximizar">
+                <svg width="10" height="10" viewBox="0 0 10 10">
+                    <rect width="9" height="9" x="0.5" y="0.5" fill="none" stroke="white" />
+                </svg>
+            </div>
+            <div id="close-btn" class="win-btn" title="Cerrar">
+                <svg width="10" height="10" viewBox="0 0 10 10">
+                    <path d="M1,1 L9,9 M9,1 L1,9" stroke="white" fill="none" />
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <div id="close-search-container" class="hidden">
+        <div id="close-search-inner" class="glass">
+            <div id="close-tabs-btn" class="win-btn" title="Cerrar página (Ctrl + Flecha Abajo)">
+                <svg width="10" height="10" viewBox="0 0 10 10">
+                    <path d="M1,1 L9,9 M9,1 L1,9" stroke="white" fill="none" />
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <div id="saved-pages-trigger" class="hidden">
+        <div id="saved-pages-trigger-inner" class="glass">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+            </svg>
+            <span>Marcadores</span>
+        </div>
+    </div>
+
+    <div id="drag-pill-container">
+        <div id="drag-pill" class="glass">
+            <svg width="24" height="6" viewBox="0 0 24 6">
+                <circle cx="3" cy="3" r="1.5" fill="white" opacity="0.5" />
+                <circle cx="9" cy="3" r="1.5" fill="white" opacity="0.5" />
+                <circle cx="15" cy="3" r="1.5" fill="white" opacity="0.5" />
+                <circle cx="21" cy="3" r="1.5" fill="white" opacity="0.5" />
+            </svg>
+        </div>
+    </div>
+
+    <div id="active-searches-container"></div>
+
+    <div id="dot-context-menu" class="glass hidden">
+        <div class="context-item" id="ctx-close">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+            <span>Cerrar</span>
+        </div>
+        <div class="context-item" id="ctx-mute">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 5L6 9H2v6h4l5 4V5zM19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
+            </svg>
+            <span>Silenciar</span>
+        </div>
+    </div>
+
+    <!-- TUTORIAL OVERLAY -->
+    <div id="tutorial-overlay" class="hidden">
+        <div id="tutorial-card" class="glass">
+            <div id="tutorial-content">
+                <!-- Javascript will populate this -->
+            </div>
+            <div id="tutorial-footer">
+                <button id="tutorial-skip" class="glass-btn">Saltar</button>
+                <div id="tutorial-dots"></div>
+                <button id="tutorial-next" class="glass-btn accent">Siguiente</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SVG Filter for Liquid Glass theme -->
+    <svg class="liquid-filter-svg" xmlns="http://www.w3.org/2000/svg">
+        <filter id="liquid-distortion" x="-50%" y="-50%" width="200%" height="200%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="4" result="noise" seed="10">
+                <animate attributeName="baseFrequency" dur="15s" values="0.012;0.018;0.012" repeatCount="indefinite" />
+            </feTurbulence>
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="40" />
+        </filter>
+    </svg>
+
+    <script src="renderer.js"></script>
+</body>
+
+</html>

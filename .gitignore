@@ -1,0 +1,6 @@
+/.gemini
+/.vscode
+/node_modules
+/dist
+/build
+/extensions

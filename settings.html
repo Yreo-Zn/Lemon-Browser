@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuración</title>
+    <link rel="icon" href="Icon.png">
+    <link rel="stylesheet" href="settings.css">
+    <!-- Ionicons for icons -->
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+</head>
+
+<body>
+
+    <div id="close-btn" title="Cerrar configuración">
+        <ion-icon name="close-outline"></ion-icon>
+    </div>
+
+    <div class="sidebar">
+        <h2><ion-icon name="settings-outline"></ion-icon> Ajustes</h2>
+        <div class="nav-item active" data-section="general">
+            General
+        </div>
+        <div class="nav-item" data-section="apariencia">
+            Apariencia
+        </div>
+        <div class="nav-item" data-section="privacidad">
+            Privacidad y Seguridad
+        </div>
+        <div class="nav-item" data-section="atajos">
+            Atajos de Teclado
+        </div>
+        <div class="nav-item" data-section="extensiones">
+            Extensiones
+        </div>
+        <div class="nav-item" data-section="informacion">
+            Información
+        </div>
+    </div>
+
+    <div class="content">
+        <!-- GENERAL SECTION -->
+        <div id="general" class="section active">
+            <h1>General</h1>
+
+
+
+            <div class="form-group">
+                <label>Página de Inicio</label>
+                <p>Configura lo que ves al abrir una nueva ventana.</p>
+                <div class="toggle-container">
+                    <span>Abrir siempre una página en blanco</span>
+                    <label class="switch">
+                        <input type="checkbox" id="blank-page-toggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-container" style="margin-top: 15px;">
+                    <span>Recordar páginas abiertas al iniciar</span>
+                    <label class="switch">
+                        <input type="checkbox" id="remember-pages-toggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div style="margin-top: 20px;">
+                    <button type="button" id="replay-tutorial-btn" class="btn">Mostrar tutorial de bienvenida</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- APARIENCIA SECTION -->
+        <div id="apariencia" class="section">
+            <h1>Apariencia</h1>
+
+
+
+            <div class="form-group">
+                <label>Animaciones</label>
+                <p>Configura la fluidez de la interfaz.</p>
+                <div class="toggle-container">
+                    <span>Reducir movimiento</span>
+                    <label class="switch">
+                        <input type="checkbox" id="reduce-motion-toggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-container" style="margin-top: 15px;">
+                    <span>Desactivar por completo</span>
+                    <label class="switch">
+                        <input type="checkbox" id="no-animations-toggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Liquid Glass toggle hidden for future update
+            <div class="form-group">
+                <label>Efecto Liquid Glass</label>
+                <p>Activa un efecto visual de cristal líquido (basado en iOS 26 concept).</p>
+                <div class="toggle-container">
+                    <span>Habilitar Liquid Glass</span>
+                    <label class="switch">
+                        <input type="checkbox" id="liquid-glass-toggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+            -->
+
+            <div class="form-group">
+                <label>Color de Acento</label>
+                <p>Personaliza el color de acento del navegador.</p>
+                <div class="color-picker-container">
+                    <input type="color" id="accent-color-picker" value="#bb86fc">
+                    <div class="color-presets">
+                        <button type="button" class="color-preset" data-color="#bb86fc" style="background: #bb86fc;"
+                            title="Púrpura (predeterminado)"></button>
+                        <button type="button" class="color-preset" data-color="#6496ff" style="background: #6496ff;"
+                            title="Azul"></button>
+                        <button type="button" class="color-preset" data-color="#03dac6" style="background: #03dac6;"
+                            title="Cian"></button>
+                        <button type="button" class="color-preset" data-color="#ff6b9d" style="background: #ff6b9d;"
+                            title="Rosa"></button>
+                        <button type="button" class="color-preset" data-color="#ffa726" style="background: #ffa726;"
+                            title="Naranja"></button>
+                        <button type="button" class="color-preset" data-color="#66bb6a" style="background: #66bb6a;"
+                            title="Verde"></button>
+                        <button type="button" class="color-preset" data-color="#ef5350" style="background: #ef5350;"
+                            title="Rojo"></button>
+                        <button type="button" class="color-preset" data-color="#ffd54f" style="background: #ffd54f;"
+                            title="Amarillo"></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PRIVACIDAD SECTION -->
+        <div id="privacidad" class="section">
+            <h1>Privacidad y Seguridad</h1>
+
+            <div class="form-group">
+                <label>Rastreo</label>
+                <p>Enviar una solicitud de "No rastrear" con tu tráfico de navegación.</p>
+                <div class="toggle-container">
+                    <span>Do Not Track</span>
+                    <label class="switch">
+                        <input type="checkbox" id="dnt-toggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-container" style="margin-top: 15px;">
+                    <span>Adblock (uBlock Origin compatible)</span>
+                    <label class="switch">
+                        <input type="checkbox" id="adblock-toggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <p style="font-size: 0.8em; font-style: italic; opacity: 0.7; margin-top: 8px;">
+                    Soy una función aún en desarrollo, puedo dar algún que otro problema :)
+                </p>
+            </div>
+
+            <div class="form-group">
+                <label>Sitios recientes</label>
+                <p>Configura cuántas páginas recientes quieres que el navegador recuerde.</p>
+                <div class="input-setting" style="margin-top: 10px;">
+                    <span style="font-size: 0.9em; opacity: 0.9;">Sitios a recordar:</span>
+                    <input type="number" id="recent-sites-limit" min="0" max="50" value="5"
+                        class="setting-number-input">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Borrar datos de navegación</label>
+                <p>Elimina el historial, las cookies y la caché.</p>
+                <button type="button" id="clear-data-btn" class="btn btn-danger">Borrar datos ahora</button>
+            </div>
+        </div>
+
+        <!-- ATAJOS SECTION -->
+        <div id="atajos" class="section">
+            <h1>Atajos de Teclado</h1>
+            <p>Haz clic en el cuadro y pulsa la combinación de teclas que desees.</p>
+
+            <div class="form-group">
+                <label>Buscar / Abrir barra</label>
+                <div class="shortcut-input" id="shortcut-search" tabIndex="0">Ctrl + ArrowUp</div>
+            </div>
+
+            <div class="form-group">
+                <label>Cerrar página activa</label>
+                <div class="shortcut-input" id="shortcut-close" tabIndex="0">Ctrl + ArrowDown</div>
+            </div>
+
+            <div class="form-group">
+                <label>Página Anterior</label>
+                <div class="shortcut-input" id="shortcut-back" tabIndex="0">Ctrl + ArrowLeft</div>
+            </div>
+
+            <div class="form-group">
+                <label>Página Siguiente</label>
+                <div class="shortcut-input" id="shortcut-forward" tabIndex="0">Ctrl + ArrowRight</div>
+            </div>
+
+            <div class="form-group">
+                <label>Siguiente Pestaña</label>
+                <div class="shortcut-input" id="shortcut-tab-next" tabIndex="0">Alt + ArrowRight</div>
+            </div>
+
+            <div class="form-group">
+                <label>Pestaña Anterior</label>
+                <div class="shortcut-input" id="shortcut-tab-prev" tabIndex="0">Alt + ArrowLeft</div>
+            </div>
+
+            <div class="form-group">
+                <label>Centrar Navegador</label>
+                <div class="shortcut-input" id="shortcut-center-window" tabIndex="0">Alt + ArrowUp</div>
+            </div>
+
+            <button type="button" id="reset-shortcuts-btn" class="btn">Restablecer predeterminados</button>
+        </div>
+
+        <!-- EXTENSIONES SECTION -->
+        <div id="extensiones" class="section">
+            <h1>Extensiones</h1>
+            <p>Gestiona tus extensiones de Chromium. Arrastra archivos .crx o .zip aquí para instalar.</p>
+
+            <div style="margin-bottom: 20px;">
+                <button type="button" id="open-webstore-btn" class="btn"
+                    style="background-color: #333; border: 1px solid #555; display: flex; align-items: center; gap: 8px;">
+                    <ion-icon name="logo-chrome"></ion-icon> Ir a Chrome Web Store
+                </button>
+            </div>
+
+            <div id="drop-zone" class="drop-zone">
+                <ion-icon name="cloud-upload-outline"></ion-icon>
+                <p>Suelta archivos de extensión aquí</p>
+            </div>
+
+            <div id="extensions-list" class="extensions-list">
+                <!-- Extension items will be injected here -->
+            </div>
+        </div>
+
+        <!-- INFORMACION SECTION -->
+        <div id="informacion" class="section">
+            <h1>Sobre Lemon Browser</h1>
+            <div class="about-info">
+                <ion-icon name="planet-outline" style="font-size: 64px; margin-bottom: 20px;"></ion-icon>
+                <h2>Lemon Browser v1.2.0</h2>
+                <p>Un navegador conceptualizado para simplicidad, sin extras innecesarios y 'on device'.</p>
+                <p>&copy; 2026 Project Lemon</p>
+
+                <div
+                    style="margin-top: 30px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px; width: 100%;">
+                    <p style="font-size: 0.9em; opacity: 0.8; margin-bottom: 15px;">Tus datos y ajustes se guardan en:
+                    </p>
+                    <button type="button" id="open-data-folder-btn" class="btn">
+                        <ion-icon name="folder-open-outline"
+                            style="vertical-align: middle; margin-right: 5px;"></ion-icon>
+                        Abrir carpeta de datos
+                    </button>
+                    <p style="font-size: 0.75em; opacity: 0.5; margin-top: 10px;">Carpeta: Documents/Your_Lemon_Data</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="settings.js"></script>
+</body>
+
+</html>
