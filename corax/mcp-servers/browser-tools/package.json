@@ -1,0 +1,11 @@
+{
+  "name": "lemon-browser-mcp",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "MCP Server for Lemon Browser testing & debugging via CDP",
+  "main": "server.js",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0"
+  }
+}

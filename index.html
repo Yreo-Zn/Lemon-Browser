@@ -50,7 +50,7 @@
     <div id="main-browser-container" class="hidden"></div>
 
     <div id="settings-container" class="hidden">
-        <webview id="settings-webview" src="about:blank" webpreferences="nodeIntegration=yes, contextIsolation=no">
+        <webview id="settings-webview" src="about:blank">
         </webview>
     </div>
 
@@ -145,7 +145,7 @@
         </filter>
     </svg>
 
-    <script src="renderer.js"></script>
+    <script type="module" src="renderer.js"></script>
 </body>
 
 </html>

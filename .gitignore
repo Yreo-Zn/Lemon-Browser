@@ -1,6 +1,46 @@
-/.gemini
-/.vscode
-/node_modules
-/dist
-/build
-/extensions
+# ═══════════════════════════════════════════════════════════════
+# Lemon Browser — .gitignore
+# Capa 12 (Canal Adaptador) del Swarm CoRax
+# ═══════════════════════════════════════════════════════════════
+
+# ── Dependencias ─────────────────────────────────────────────
+node_modules/
+mcp-server/node_modules/
+
+# ── Build & Distribution ────────────────────────────────────
+dist/
+build/
+*.exe
+*.blockmap
+*.nupkg
+*.yml
+!package.json
+builder-debug.yml
+builder-effective-config.yaml
+
+# ── Extensions (runtime, no versionadas) ────────────────────
+extensions/
+
+# ── IDE ──────────────────────────────────────────────────────
+.vscode/
+.idea/
+
+# ── Agent artifacts ──────────────────────────────────────────
+.gemini/
+
+# ── Logs ─────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── OS ───────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Backup files ─────────────────────────────────────────────
+*.bak
+*.orig
+*.tmp
+
+# ── Environment ──────────────────────────────────────────────
+.env
+.env.*

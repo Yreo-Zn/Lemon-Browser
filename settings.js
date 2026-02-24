@@ -10,7 +10,7 @@
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
-    const { ipcRenderer } = require('electron');
+    // window.electronAPI provided by preload-settings.js (contextBridge)
 
     // ========================================================================
     // NAVEGACIÓN ENTRE SECCIONES
@@ -36,13 +36,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     // GESTIÓN DE CONFIGURACIÓN PERSISTENTE
     // ========================================================================
 
-    let globalSettings = await ipcRenderer.invoke('get-settings');
+    let globalSettings = await window.electronAPI.getSettings();
 
     /**
      * Guarda la configuración globalmente
      */
     function saveSettings() {
-        ipcRenderer.send('save-settings', globalSettings);
+        window.electronAPI.saveSettings(globalSettings);
     }
 
     // ========================================================================
@@ -50,6 +50,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ========================================================================
 
     const toggles = document.querySelectorAll('input[type="checkbox"]');
+
+    const animationHandler = () => {
+        window.electronAPI.sendToHost('animation-settings-changed', {
+            reduceMotion: document.getElementById('reduce-motion-toggle').checked,
+            noAnimations: document.getElementById('no-animations-toggle').checked
+        });
+    };
+
+    const toggleHandlers = {
+        'liquid-glass-toggle': (checked) => {
+            window.electronAPI.sendToHost('theme-changed', { theme: 'liquid-glass', enabled: checked });
+        },
+        'remember-pages-toggle': (checked) => {
+            window.electronAPI.sendToHost('remember-pages-changed', checked);
+        },
+        'adblock-toggle': (checked) => {
+            window.electronAPI.sendToHost('adblock-changed', checked);
+        },
+        'reduce-motion-toggle': animationHandler,
+        'no-animations-toggle': animationHandler
+    };
+
     toggles.forEach(toggle => {
         const key = toggle.id;
         if (globalSettings[key] !== undefined) {
@@ -60,22 +82,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             globalSettings[key] = toggle.checked;
             saveSettings();
 
-            // Notificaciones específicas según el toggle
-            if (key === 'liquid-glass-toggle') {
-                ipcRenderer.sendToHost('theme-changed', {
-                    theme: 'liquid-glass',
-                    enabled: toggle.checked
-                });
-            } else if (key === 'remember-pages-toggle') {
-                ipcRenderer.sendToHost('remember-pages-changed', toggle.checked);
-            } else if (key === 'adblock-toggle') {
-                ipcRenderer.sendToHost('adblock-changed', toggle.checked);
-            } else if (key === 'reduce-motion-toggle' || key === 'no-animations-toggle') {
-                ipcRenderer.sendToHost('animation-settings-changed', {
-                    reduceMotion: document.getElementById('reduce-motion-toggle').checked,
-                    noAnimations: document.getElementById('no-animations-toggle').checked
-                });
-            }
+            const handler = toggleHandlers[key];
+            if (handler) handler(toggle.checked);
         });
     });
 
@@ -102,10 +110,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     // CARPETA DE DATOS
     // ========================================================================
 
-    const dataFolderBtn = document.getElementById('open-data-folder');
+    const dataFolderBtn = document.getElementById('open-data-folder-btn');
     if (dataFolderBtn) {
         dataFolderBtn.addEventListener('click', () => {
-            ipcRenderer.send('open-data-folder');
+            window.electronAPI.openDataFolder();
         });
     }
 
@@ -154,7 +162,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.documentElement.style.setProperty('--accent-color-medium', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.6)`);
         document.documentElement.style.setProperty('--accent-color-dark', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.8)`);
 
-        ipcRenderer.sendToHost('accent-color-changed', color);
+        window.electronAPI.sendToHost('accent-color-changed', color);
     }
 
     /**
@@ -240,8 +248,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             shortcuts[id] = { key, ctrl, shift, alt, label };
             globalSettings['browser-shortcuts'] = shortcuts;
             saveSettings();
-            input.innerText = shortcut.label;
-            ipcRenderer.sendToHost('shortcuts-changed', shortcuts);
+            input.innerText = label;
+            window.electronAPI.sendToHost('shortcuts-changed', shortcuts);
         });
     });
 
@@ -252,7 +260,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             globalSettings['browser-shortcuts'] = shortcuts;
             saveSettings();
             updateShortcutDisplay();
-            ipcRenderer.sendToHost('shortcuts-changed', shortcuts);
+            window.electronAPI.sendToHost('shortcuts-changed', shortcuts);
         });
     }
 
@@ -273,7 +281,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const closeBtn = document.getElementById('close-btn');
     if (closeBtn) {
         closeBtn.addEventListener('click', () => {
-            ipcRenderer.sendToHost('close-settings');
+            window.electronAPI.sendToHost('close-settings');
         });
     }
 
@@ -292,16 +300,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Botón para abrir Chrome Web Store
         if (openWebStoreBtn) {
             openWebStoreBtn.addEventListener('click', () => {
-                // Abrir en nueva pestaña
-                const { shell } = require('electron');
-                // shell.openExternal abre en navegador predeterminado del sistema. 
-                // Queremos abrirlo en NUESTRO navegador (nueva pestaña).
-                ipcRenderer.send('browser-new-tab', 'https://chromewebstore.google.com/');
+                window.electronAPI.sendToHost('open-url', 'https://chromewebstore.google.com/');
             });
         }
 
         // Escuchar evento de instalación desde el Main Process (Context Menu)
-        ipcRenderer.on('trigger-extension-install', async (event, extensionId) => {
+        window.electronAPI.onTriggerExtensionInstall(async (extensionId) => {
             const confirmInstall = confirm('¿Quieres instalar esta extensión desde la Chrome Web Store?');
             if (!confirmInstall) return;
 
@@ -309,7 +313,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             dropZone.innerHTML = `<p>Descargando e instalando extensión (${extensionId})...</p>`;
 
             try {
-                const result = await ipcRenderer.invoke('download-and-install-crx', extensionId);
+                const result = await window.electronAPI.downloadAndInstallCrx(extensionId);
                 if (result.success) {
                     alert(`Extensión "${result.name}" instalada correctamente.`);
                     loadExtensions();
@@ -328,7 +332,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
 
         // Escuchar evento de instalación desde EDGE Addons
-        ipcRenderer.on('trigger-edge-extension-install', async (event, extensionId) => {
+        window.electronAPI.onTriggerEdgeExtensionInstall(async (extensionId) => {
             const confirmInstall = confirm('¿Quieres instalar esta extensión desde Microsoft Edge Add-ons?');
             if (!confirmInstall) return;
 
@@ -336,7 +340,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             dropZone.innerHTML = `<p>Descargando e instalando extensión de Edge (${extensionId})...</p>`;
 
             try {
-                const result = await ipcRenderer.invoke('download-and-install-edge-crx', extensionId);
+                const result = await window.electronAPI.downloadAndInstallEdgeCrx(extensionId);
                 if (result.success) {
                     alert(`Extensión de Edge "${result.name}" instalada correctamente.`);
                     loadExtensions();
@@ -380,7 +384,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     dropZone.innerHTML = `<p>Instalando ${file.name}...</p>`;
 
                     try {
-                        const result = await ipcRenderer.invoke('install-extension', file.path);
+                        const result = await window.electronAPI.installExtension(file.path);
                         if (result.success) {
                             alert(`Extensión "${result.name}" instalada correctamente.`);
                             loadExtensions();
@@ -406,7 +410,7 @@ document.addEventListener('DOMContentLoaded', async () => {
          * Carga y renderiza la lista de extensiones
          */
         async function loadExtensions() {
-            const extensions = await ipcRenderer.invoke('get-extensions-list');
+            const extensions = await window.electronAPI.getExtensionsList();
             renderExtensions(extensions);
         }
 
@@ -417,48 +421,55 @@ document.addEventListener('DOMContentLoaded', async () => {
             extensionsList.innerHTML = '';
 
             extensions.forEach(ext => {
-                // Filtrar extensiones internas si es necesario (ej. uBlock podría mostrarse pero no borrarse)
-
                 const card = document.createElement('div');
                 card.className = 'extension-card';
 
-                // Intentar obtener inicial del nombre para el icono
                 const initial = ext.name ? ext.name.charAt(0).toUpperCase() : '?';
 
-                card.innerHTML = `
-                    <div class="extension-header">
-                        <div class="extension-icon">${initial}</div>
-                        <div class="extension-info">
-                            <div class="extension-name" title="${ext.name}">${ext.name}</div>
-                            <div class="extension-version">v${ext.version}</div>
-                        </div>
-                    </div>
-                    <div class="extension-actions">
-                        <button class="extension-btn options-btn" data-id="${ext.id}">
-                            <ion-icon name="settings-outline"></ion-icon> Configurar
-                        </button>
-                        <button class="extension-btn delete delete-btn" data-id="${ext.id}">
-                            <ion-icon name="trash-outline"></ion-icon>
-                        </button>
-                    </div>
-                `;
+                // Header
+                const header = document.createElement('div');
+                header.className = 'extension-header';
 
-                extensionsList.appendChild(card);
-            });
+                const iconDiv = document.createElement('div');
+                iconDiv.className = 'extension-icon';
+                iconDiv.textContent = initial;
 
-            // Asignar eventos a los botones
-            document.querySelectorAll('.options-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const id = btn.dataset.id;
-                    ipcRenderer.send('open-extension-options', id);
+                const infoDiv = document.createElement('div');
+                infoDiv.className = 'extension-info';
+
+                const nameDiv = document.createElement('div');
+                nameDiv.className = 'extension-name';
+                nameDiv.title = ext.name;
+                nameDiv.textContent = ext.name;
+
+                const versionDiv = document.createElement('div');
+                versionDiv.className = 'extension-version';
+                versionDiv.textContent = 'v' + ext.version;
+
+                infoDiv.appendChild(nameDiv);
+                infoDiv.appendChild(versionDiv);
+                header.appendChild(iconDiv);
+                header.appendChild(infoDiv);
+
+                // Actions
+                const actionsDiv = document.createElement('div');
+                actionsDiv.className = 'extension-actions';
+
+                const optionsBtn = document.createElement('button');
+                optionsBtn.className = 'extension-btn options-btn';
+                optionsBtn.dataset.id = ext.id;
+                optionsBtn.innerHTML = '<ion-icon name="settings-outline"></ion-icon> Configurar';
+                optionsBtn.addEventListener('click', () => {
+                    window.electronAPI.openExtensionOptions(ext.id);
                 });
-            });
 
-            document.querySelectorAll('.delete-btn').forEach(btn => {
-                btn.addEventListener('click', async () => {
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'extension-btn delete delete-btn';
+                deleteBtn.dataset.id = ext.id;
+                deleteBtn.innerHTML = '<ion-icon name="trash-outline"></ion-icon>';
+                deleteBtn.addEventListener('click', async () => {
                     if (confirm('¿Estás seguro de que deseas eliminar esta extensión?')) {
-                        const id = btn.dataset.id;
-                        const result = await ipcRenderer.invoke('remove-extension', id);
+                        const result = await window.electronAPI.removeExtension(ext.id);
                         if (result.success) {
                             loadExtensions();
                         } else {
@@ -466,6 +477,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                         }
                     }
                 });
+
+                actionsDiv.appendChild(optionsBtn);
+                actionsDiv.appendChild(deleteBtn);
+
+                card.appendChild(header);
+                card.appendChild(actionsDiv);
+                extensionsList.appendChild(card);
             });
         }
     }
