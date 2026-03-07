@@ -59,6 +59,7 @@ export const dom = {
   savedPagesTrigger: null,
   savedPagesTriggerInner: null,
   menuOverlay: null,
+  coraxPanel: null,
 };
 
 export function initDOM() {
@@ -96,4 +97,5 @@ export function initDOM() {
   dom.savedPagesTrigger = document.getElementById('saved-pages-trigger');
   dom.savedPagesTriggerInner = document.getElementById('saved-pages-trigger-inner');
   dom.menuOverlay = document.getElementById('menu-overlay');
+  dom.coraxPanel = document.getElementById('corax-panel');
 }

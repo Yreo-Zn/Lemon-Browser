@@ -9,7 +9,8 @@ import { setInteractive, updateControlsMode, resetSearchIdleTimer } from './ghos
 import { saveGlobalSettings, applyAccentColor, applyTheme, applyAnimationSettings, getScrollbarCSS } from './settings-manager.js';
 import {
   navigateTo, switchNextTab, switchPrevTab, closeCurrentPage, closePageAtIndex,
-  savePage, returnToHome, renderSavedPages, saveOpenPagesState
+  savePage, returnToHome, renderSavedPages, saveOpenPagesState, switchToPage,
+  reopenLastClosedTab
 } from './tabs.js';
 import { hidePreview } from './search.js';
 
@@ -147,7 +148,7 @@ export async function openSettings() {
 
   if (dom.settingsContainer && dom.settingsWebview) {
     dom.settingsContainer.classList.remove('hidden');
-    dom.settingsWebview.setUserAgent(DESKTOP_UA);
+    dom.settingsWebview.setAttribute('useragent', DESKTOP_UA);
     dom.settingsWebview.src = settingsUrl;
 
     if (!settingsListenerAttached) {
@@ -228,6 +229,52 @@ export function setupSettingsButton() {
 // ── IPC Listeners desde Main Process ────────────────────────────
 
 export function setupIPCListeners() {
+
+  // ── Find-in-Page state & helpers (declared early for use by Escape handler) ──
+
+  const findBar = document.getElementById('find-bar');
+  const findInput = document.getElementById('find-input');
+  const findCount = document.getElementById('find-count');
+  const findNextBtn = document.getElementById('find-next-btn');
+  const findPrevBtn = document.getElementById('find-prev-btn');
+  const findCloseBtn = document.getElementById('find-close-btn');
+
+  let findActive = false;
+
+  function getActiveWebview() {
+    if (state.activePageIndex >= 0 && state.openPages[state.activePageIndex]) {
+      return state.openPages[state.activePageIndex].webview;
+    }
+    return null;
+  }
+
+  function openFindBar() {
+    if (!findBar) return;
+    findBar.classList.remove('hidden');
+    findInput.focus();
+    findInput.select();
+    findActive = true;
+  }
+
+  function closeFindBar() {
+    if (!findBar) return;
+    findBar.classList.add('hidden');
+    findActive = false;
+    findCount.textContent = '';
+    const wv = getActiveWebview();
+    if (wv) {
+      try { wv.stopFindInPage('clearSelection'); } catch (_) {}
+    }
+  }
+
+  function doFind(forward) {
+    const wv = getActiveWebview();
+    if (!wv || !findInput.value) return;
+    wv.findInPage(findInput.value, { forward, findNext: true });
+  }
+
+  // ── IPC Listeners ─────────────────────────────────────────────
+
   window.electronAPI.onRequestInitialAdblock(() => {
     const enabled = state.globalSettings['adblock-toggle'] === true;
     window.electronAPI.setAdblockEnabled(enabled);
@@ -278,6 +325,172 @@ export function setupIPCListeners() {
   window.electronAPI.onBrowserNewTab((url) => navigateTo(url));
 
   window.electronAPI.onOpenSettingsRequested(() => openSettings());
+
+  // ── Standard Browser Actions ──────────────────────────────────
+
+  window.electronAPI.onBrowserToggleDevtools(() => {
+    if (state.activePageIndex >= 0 && state.openPages[state.activePageIndex]) {
+      const wv = state.openPages[state.activePageIndex].webview;
+      if (wv.isDevToolsOpened()) wv.closeDevTools();
+      else wv.openDevTools();
+    }
+  });
+
+  window.electronAPI.onBrowserReload(() => {
+    if (state.activePageIndex >= 0 && state.openPages[state.activePageIndex]) {
+      state.openPages[state.activePageIndex].webview.reload();
+    }
+  });
+
+  window.electronAPI.onBrowserHardReload(() => {
+    if (state.activePageIndex >= 0 && state.openPages[state.activePageIndex]) {
+      state.openPages[state.activePageIndex].webview.reloadIgnoringCache();
+    }
+  });
+
+  window.electronAPI.onBrowserSwitchTab((index) => {
+    if (state.openPages.length === 0) return;
+    if (index === 9) {
+      switchToPage(state.openPages.length - 1);
+    } else if (index <= state.openPages.length) {
+      switchToPage(index - 1);
+    }
+  });
+
+  window.electronAPI.onBrowserBookmark(() => {
+    if (state.activePageIndex >= 0 && state.openPages[state.activePageIndex]) {
+      savePage(state.openPages[state.activePageIndex]);
+    }
+  });
+
+  window.electronAPI.onBrowserEscape(() => {
+    // Close find bar if open
+    if (findActive) {
+      closeFindBar();
+      return;
+    }
+    if (state.activePageIndex >= 0 && state.openPages[state.activePageIndex]) {
+      const wv = state.openPages[state.activePageIndex].webview;
+      if (wv.isLoading()) wv.stop();
+    }
+    hidePreview();
+    if (dom.searchBar) dom.searchBar.blur();
+  });
+
+  window.electronAPI.onBrowserZoomIn(() => {
+    if (state.activePageIndex >= 0 && state.openPages[state.activePageIndex]) {
+      const wv = state.openPages[state.activePageIndex].webview;
+      wv.setZoomLevel(wv.getZoomLevel() + 0.5);
+    }
+  });
+
+  window.electronAPI.onBrowserZoomOut(() => {
+    if (state.activePageIndex >= 0 && state.openPages[state.activePageIndex]) {
+      const wv = state.openPages[state.activePageIndex].webview;
+      wv.setZoomLevel(wv.getZoomLevel() - 0.5);
+    }
+  });
+
+  window.electronAPI.onBrowserZoomReset(() => {
+    if (state.activePageIndex >= 0 && state.openPages[state.activePageIndex]) {
+      state.openPages[state.activePageIndex].webview.setZoomLevel(0);
+    }
+  });
+
+  // ── Find-in-Page wiring ────────────────────────────────────────
+
+  if (findInput) {
+    findInput.addEventListener('input', () => {
+      const wv = getActiveWebview();
+      if (!wv || !findInput.value) {
+        findCount.textContent = '';
+        if (wv) try { wv.stopFindInPage('clearSelection'); } catch (_) {}
+        return;
+      }
+      wv.findInPage(findInput.value);
+    });
+
+    findInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        doFind(!e.shiftKey);
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeFindBar();
+      }
+    });
+  }
+
+  if (findNextBtn) findNextBtn.addEventListener('click', () => doFind(true));
+  if (findPrevBtn) findPrevBtn.addEventListener('click', () => doFind(false));
+  if (findCloseBtn) findCloseBtn.addEventListener('click', () => closeFindBar());
+
+  // Listen for found-in-page results on active webview
+  function attachFindListener(wv) {
+    wv.addEventListener('found-in-page', (e) => {
+      if (findActive && e.result) {
+        const { activeMatchOrdinal, matches } = e.result;
+        findCount.textContent = matches > 0 ? `${activeMatchOrdinal}/${matches}` : 'No results';
+      }
+    });
+  }
+
+  // Attach to existing and future webviews
+  const findObserver = new MutationObserver((mutations) => {
+    for (const m of mutations) {
+      for (const node of m.addedNodes) {
+        if (node.tagName === 'WEBVIEW') attachFindListener(node);
+      }
+    }
+  });
+  if (dom.mainBrowserContainer) {
+    findObserver.observe(dom.mainBrowserContainer, { childList: true });
+    dom.mainBrowserContainer.querySelectorAll('webview').forEach(attachFindListener);
+  }
+
+  window.electronAPI.onBrowserFind(() => openFindBar());
+  window.electronAPI.onBrowserFindNext(() => {
+    if (findActive) doFind(true);
+    else openFindBar();
+  });
+  window.electronAPI.onBrowserFindPrev(() => {
+    if (findActive) doFind(false);
+    else openFindBar();
+  });
+
+  window.electronAPI.onBrowserFullscreen(() => {
+    window.electronAPI.windowMaximize();
+  });
+
+  // ── Additional Standard Browser Actions ───────────────────────
+
+  window.electronAPI.onBrowserReopenTab(() => reopenLastClosedTab());
+
+  window.electronAPI.onBrowserPrint(() => {
+    const wv = getActiveWebview();
+    if (wv) wv.print();
+  });
+
+  window.electronAPI.onBrowserViewSource(() => {
+    const wv = getActiveWebview();
+    if (wv) {
+      const url = wv.getURL();
+      if (url) navigateTo('view-source:' + url);
+    }
+  });
+
+  window.electronAPI.onBrowserHome(() => returnToHome());
+
+  window.electronAPI.onBrowserBackIfNotInput(() => {
+    // Only go back if no text input is focused in the main renderer
+    const active = document.activeElement;
+    if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) {
+      return; // Let backspace work normally in inputs
+    }
+    const wv = getActiveWebview();
+    if (wv && wv.canGoBack()) wv.goBack();
+  });
 
   window.electronAPI.onTriggerExtensionInstall(async (extensionId) => {
     await openSettings();

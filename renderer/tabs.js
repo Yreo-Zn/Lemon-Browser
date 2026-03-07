@@ -8,6 +8,12 @@ import { state, dom } from './state.js';
 import { setInteractive, updateControlsMode, resetSearchIdleTimer } from './ghost-mode.js';
 import { saveGlobalSettings, getScrollbarCSS } from './settings-manager.js';
 import { hidePreview } from './search.js';
+import { showNavBar, hideNavBar, attachNavListeners, updateNavBar } from './nav-bar.js';
+
+// ── Closed tabs stack (for Ctrl+Shift+T) ────────────────────────
+
+const closedTabsStack = [];
+const MAX_CLOSED_TABS = 20;
 
 // ── Recientes ───────────────────────────────────────────────────
 
@@ -210,6 +216,8 @@ export function switchToPage(index) {
     page.dot.classList.add('active');
     page.lastUsed = Date.now();
     setInteractive(true);
+    attachNavListeners(page.webview);
+    updateNavBar();
   }
 }
 
@@ -232,6 +240,16 @@ export function closePageAtIndex(index) {
   if (index < 0 || !state.openPages[index]) return;
 
   const pageToClose = state.openPages[index];
+
+  // Save closed tab info for Ctrl+Shift+T
+  try {
+    const url = pageToClose.webview ? pageToClose.webview.getURL() : pageToClose.url;
+    if (url && url !== 'about:blank') {
+      closedTabsStack.push({ url, name: pageToClose.name || url, favicon: pageToClose.favicon });
+      if (closedTabsStack.length > MAX_CLOSED_TABS) closedTabsStack.shift();
+    }
+  } catch (_) {}
+
   pageToClose.webview.remove();
   pageToClose.dot.remove();
   state.openPages.splice(index, 1);
@@ -339,6 +357,8 @@ function wakeUpPage(page) {
 
   // B06: Monitoreo de crashes y fallos de carga
   attachWebviewMonitors(webview, page);
+
+  attachNavListeners(webview);
 }
 
 function hibernatePage(page) {
@@ -382,6 +402,7 @@ export function returnToHome() {
 
   setInteractive(true);
   updateControlsMode(true, false);
+  hideNavBar();
 
   dom.searchBar.value = '';
   dom.barContainer.classList.remove('active-mode');
@@ -469,6 +490,10 @@ export function navigateTo(url) {
   updateControlsMode(false);
   dom.wrapper.style.display = 'none';
 
+  // Nav bar
+  attachNavListeners(webview);
+  showNavBar();
+
   // Scrollbar + clear history
   webview.addEventListener('dom-ready', () => {
     webview.clearHistory();
@@ -496,6 +521,14 @@ export function navigateTo(url) {
 
   // B06: Monitoreo de crashes y fallos de carga
   attachWebviewMonitors(webview, pageObj);
+}
+
+// ── Reopen closed tab (Ctrl+Shift+T) ────────────────────────────
+
+export function reopenLastClosedTab() {
+  if (closedTabsStack.length === 0) return;
+  const tab = closedTabsStack.pop();
+  navigateTo(tab.url);
 }
 
 // ── Restaurar páginas al inicio ─────────────────────────────────

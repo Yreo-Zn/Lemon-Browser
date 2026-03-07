@@ -14,8 +14,59 @@ const https = require('https');
 const extract = require('extract-zip');
 const { USER_EXTENSIONS_DIR } = require('./config');
 const { createLogger } = require('./logger');
+const { getFramework } = require('./constitution');
 
 const log = createLogger('extensions');
+
+// ── Constitutional helpers ──────────────────────────────────────
+
+/**
+ * Log a browser action to the constitutional audit trail (PETREA 3).
+ * Fails silently if the constitution is not active.
+ */
+function auditLog(entry) {
+  try {
+    const fw = getFramework();
+    if (!fw || !fw.isInitialized) return;
+    const audit = fw.getPetrea('auditTrail');
+    audit.log(entry);
+  } catch { /* constitution not ready — non-blocking */ }
+}
+
+/**
+ * Validate an extension before installation via PETREA 5.
+ * Returns { allowed, reason } — allowed is always true if constitution is inactive.
+ */
+function constitutionValidateExtension(manifest) {
+  try {
+    const fw = getFramework();
+    if (!fw || !fw.isInitialized) return { allowed: true, reason: 'constitution-inactive' };
+    const validator = fw.getPetrea('extensionValidator');
+
+    // Check if already whitelisted
+    if (manifest.id && validator.isWhitelisted(manifest.id)) {
+      return { allowed: true, reason: 'whitelisted' };
+    }
+
+    // Validate manifest structure
+    validator.validateManifest(manifest);
+    return { allowed: true, reason: 'manifest-valid' };
+  } catch (err) {
+    return { allowed: false, reason: err.message };
+  }
+}
+
+/**
+ * Register a successfully installed extension in the PETREA 5 whitelist.
+ */
+async function constitutionWhitelistExtension(manifest) {
+  try {
+    const fw = getFramework();
+    if (!fw || !fw.isInitialized) return;
+    const validator = fw.getPetrea('extensionValidator');
+    await validator.whitelistExtension(manifest);
+  } catch { /* non-blocking */ }
+}
 
 /** ID de la extensión uBlock Origin (se asigna cuando se carga) */
 let uBlockExtensionId = null;
@@ -72,11 +123,32 @@ async function installExtensionInternal(filePath) {
 
     await extract(filePath, { dir: destDir });
 
+    // ── PETREA 5: Validate extension manifest before loading ──
+    const manifestPath = path.join(destDir, 'manifest.json');
+    let manifest = {};
+    if (fs.existsSync(manifestPath)) {
+      manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+      manifest.id = manifest.id || destDirName;
+      const check = constitutionValidateExtension(manifest);
+      if (!check.allowed) {
+        log.warn('Extension blocked by constitution', { name: manifest.name, reason: check.reason });
+        auditLog({ event: 'extension_blocked', name: manifest.name, reason: check.reason, severity: 'WARNING' });
+        fs.rmSync(destDir, { recursive: true, force: true });
+        return { success: false, error: `Bloqueada por la constitución: ${check.reason}` };
+      }
+    }
+
     const ext = await session.defaultSession.extensions.loadExtension(destDir);
     log.info(`Extensión instalada: ${ext.name} (${ext.id})`);
+
+    // ── PETREA 5: Whitelist + PETREA 3: Audit ─────────────────
+    await constitutionWhitelistExtension({ id: ext.id, name: ext.name, version: ext.version, permissions: manifest.permissions || [] });
+    auditLog({ event: 'extension_installed', name: ext.name, id: ext.id, version: ext.version });
+
     return { success: true, name: ext.name, id: ext.id };
   } catch (error) {
     log.error('Error instalando extensión', { message: error.message });
+    auditLog({ event: 'extension_install_failed', error: error.message, severity: 'WARNING' });
     return { success: false, error: error.message };
   }
 }
@@ -211,6 +283,7 @@ function registerExtensionHandlers(app) {
   ipcMain.handle('download-and-install-crx', async (_event, extensionId) => {
     try {
       log.info(`Descargando extensión: ${extensionId}`);
+      auditLog({ event: 'extension_download_start', source: 'chrome', extensionId });
       const crxUrl = `https://clients2.google.com/service/update2/crx?response=redirect&prodversion=133.0.0.0&acceptformat=crx2,crx3&x=id%3D${extensionId}%26uc`;
       const tempPath = path.join(app.getPath('temp'), `${extensionId}.crx`);
 
@@ -225,6 +298,7 @@ function registerExtensionHandlers(app) {
       return result;
     } catch (error) {
       log.error('Error descargando extensión', { message: error.message });
+      auditLog({ event: 'extension_download_failed', source: 'chrome', extensionId, error: error.message, severity: 'WARNING' });
       return { success: false, error: error.message };
     }
   });
@@ -232,6 +306,7 @@ function registerExtensionHandlers(app) {
   ipcMain.handle('download-and-install-edge-crx', async (_event, extensionId) => {
     try {
       log.info(`Descargando extensión Edge: ${extensionId}`);
+      auditLog({ event: 'extension_download_start', source: 'edge', extensionId });
       const crxUrl = `https://edge.microsoft.com/extensionwebstorebase/v1/crx?response=redirect&x=id%3D${extensionId}%26installsource%3Dondemand%26uc`;
       const tempPath = path.join(app.getPath('temp'), `${extensionId}_edge.crx`);
 
@@ -246,6 +321,7 @@ function registerExtensionHandlers(app) {
       return result;
     } catch (error) {
       log.error('Error descargando extensión Edge', { message: error.message });
+      auditLog({ event: 'extension_download_failed', source: 'edge', extensionId, error: error.message, severity: 'WARNING' });
       return { success: false, error: error.message };
     }
   });
@@ -260,6 +336,7 @@ function registerExtensionHandlers(app) {
       }
 
       await session.defaultSession.extensions.removeExtension(extensionId);
+      auditLog({ event: 'extension_removed', name: ext.name, id: extensionId });
 
       if (fs.existsSync(ext.path)) {
         fs.rmSync(ext.path, { recursive: true, force: true });

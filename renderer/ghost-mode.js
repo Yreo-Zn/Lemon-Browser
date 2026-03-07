@@ -117,6 +117,17 @@ export function setupGhostMode() {
     dom.savedPagesTrigger.addEventListener('mouseenter', () => setInteractive(true));
   }
 
+  // CoRax panel
+  if (dom.coraxPanel) {
+    dom.coraxPanel.addEventListener('mouseenter', () => setInteractive(true));
+  }
+
+  // Synapse bar (post-ASI navigation)
+  const synapseBarEl = document.getElementById('synapse-bar');
+  if (synapseBarEl) {
+    synapseBarEl.addEventListener('mouseenter', () => setInteractive(true));
+  }
+
   // Initial state
   setInteractive(true);
 }
@@ -125,9 +136,10 @@ function handleMouseMove(e) {
     const isBrowserActive = dom.mainBrowserContainer && !dom.mainBrowserContainer.classList.contains('hidden');
     const isSettingsVisible = dom.settingsContainer && !dom.settingsContainer.classList.contains('hidden');
     const isTutorialVisible = dom.tutorialOverlay && !dom.tutorialOverlay.classList.contains('hidden');
+    const isCoraxOpen = dom.coraxPanel && dom.coraxPanel.classList.contains('open');
     const hasText = dom.searchBar.value.trim().length > 0;
 
-    if (isBrowserActive || isSettingsVisible || isTutorialVisible || hasText) return;
+    if (isBrowserActive || isSettingsVisible || isTutorialVisible || isCoraxOpen || hasText) return;
 
     const edgeThreshold = 10;
     const topInteractiveHeight = 60;
@@ -152,7 +164,9 @@ function handleMouseMove(e) {
         (dom.savedPagesContainer && (dom.savedPagesContainer.matches(':hover') || dom.savedPagesContainer.classList.contains('deployed'))) ||
         (dom.savedPagesTrigger && dom.savedPagesTrigger.matches(':hover')) ||
         (dom.menuOverlay && !dom.menuOverlay.classList.contains('hidden')) ||
-        (dom.activeSearchesContainer && dom.activeSearchesContainer.matches(':hover'));
+        (dom.activeSearchesContainer && dom.activeSearchesContainer.matches(':hover')) ||
+        (dom.coraxPanel && dom.coraxPanel.classList.contains('open')) ||
+        (document.getElementById('synapse-bar')?.matches(':hover'));
 
       setInteractive(isOverAny);
     }

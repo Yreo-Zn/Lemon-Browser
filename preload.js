@@ -30,6 +30,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   windowDragMove: (data) => ipcRenderer.send('window-drag-move', data),
   windowDragEnd: () => ipcRenderer.send('window-drag-end'),
 
+  // ── Window Resize ─────────────────────────────────────────────
+  windowResizeStart: (data) => ipcRenderer.send('window-resize-start', data),
+  windowResizeMove: (data) => ipcRenderer.send('window-resize-move', data),
+  windowResizeEnd: () => ipcRenderer.send('window-resize-end'),
+
   // ── Shortcuts ─────────────────────────────────────────────────
   updateShortcuts: (shortcuts) => ipcRenderer.send('update-shortcuts', shortcuts),
 
@@ -69,4 +74,54 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('trigger-edge-extension-install', (_e, extensionId) => callback(extensionId)),
   onOpenSettingsRequested: (callback) =>
     ipcRenderer.on('open-settings-requested', () => callback()),
+
+  // ── Standard Browser Actions ──────────────────────────────────
+  onBrowserToggleDevtools: (callback) =>
+    ipcRenderer.on('browser-toggle-devtools', () => callback()),
+  onBrowserReload: (callback) =>
+    ipcRenderer.on('browser-reload', () => callback()),
+  onBrowserHardReload: (callback) =>
+    ipcRenderer.on('browser-hard-reload', () => callback()),
+  onBrowserSwitchTab: (callback) =>
+    ipcRenderer.on('browser-switch-tab', (_e, index) => callback(index)),
+  onBrowserBookmark: (callback) =>
+    ipcRenderer.on('browser-bookmark', () => callback()),
+  onBrowserEscape: (callback) =>
+    ipcRenderer.on('browser-escape', () => callback()),
+  onBrowserZoomIn: (callback) =>
+    ipcRenderer.on('browser-zoom-in', () => callback()),
+  onBrowserZoomOut: (callback) =>
+    ipcRenderer.on('browser-zoom-out', () => callback()),
+  onBrowserZoomReset: (callback) =>
+    ipcRenderer.on('browser-zoom-reset', () => callback()),
+  onBrowserFind: (callback) =>
+    ipcRenderer.on('browser-find', () => callback()),
+  onBrowserFindNext: (callback) =>
+    ipcRenderer.on('browser-find-next', () => callback()),
+  onBrowserFindPrev: (callback) =>
+    ipcRenderer.on('browser-find-prev', () => callback()),
+  onBrowserFullscreen: (callback) =>
+    ipcRenderer.on('browser-fullscreen', () => callback()),
+  onBrowserReopenTab: (callback) =>
+    ipcRenderer.on('browser-reopen-tab', () => callback()),
+  onBrowserPrint: (callback) =>
+    ipcRenderer.on('browser-print', () => callback()),
+  onBrowserViewSource: (callback) =>
+    ipcRenderer.on('browser-view-source', () => callback()),
+  onBrowserHome: (callback) =>
+    ipcRenderer.on('browser-home', () => callback()),
+  onBrowserBackIfNotInput: (callback) =>
+    ipcRenderer.on('browser-back-if-not-input', () => callback()),
+
+  // ── CoRax Bridge ────────────────────────────────────────────────
+  coraxGetStatus: () => ipcRenderer.invoke('corax-get-status'),
+  coraxGetSkills: () => ipcRenderer.invoke('corax-get-skills'),
+  coraxExecute: (command) => ipcRenderer.invoke('corax-execute', command),
+  onCoraxAction: (callback) =>
+    ipcRenderer.on('corax-action', (_e, action, ...args) => callback(action, ...args)),
+  // ── Constitution ───────────────────────────────────────────────────
+  constitutionGetHealth: () => ipcRenderer.invoke('constitution-get-health'),
+  constitutionGetSoul: () => ipcRenderer.invoke('constitution-get-soul'),
+  constitutionGetHeartbeat: () => ipcRenderer.invoke('constitution-get-heartbeat'),
+  constitutionGetAudit: (count) => ipcRenderer.invoke('constitution-get-audit', count),
 });

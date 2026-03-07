@@ -14,6 +14,8 @@ const { registerWindowHandlers, createWindow } = require('./main/window');
 const {
   registerExtensionHandlers, loadStoredExtensions
 } = require('./main/extensions');
+const { registerCoraxHandlers } = require('./main/corax-bridge');
+const { initConstitution, shutdownConstitution } = require('./main/constitution');
 
 // ── Crear directorio de datos ───────────────────────────────────
 if (!fs.existsSync(DATA_DIR)) {
@@ -77,14 +79,20 @@ app.whenReady().then(async () => {
   setupSecurity();
   registerWindowHandlers();
   registerExtensionHandlers(app);
+  registerCoraxHandlers();
+
+  // ── Constitución: inicializar framework (fail-safe) ─────────
+  await initConstitution(DATA_DIR);
+
   await loadStoredExtensions(initialSettings);
   createWindow();
   log.info('Ventana creada');
 });
 
 // ── Cerrar app ──────────────────────────────────────────────────
-app.on('window-all-closed', () => {
+app.on('window-all-closed', async () => {
   log.info('Todas las ventanas cerradas');
+  await shutdownConstitution();
   logger.close();
   if (process.platform !== 'darwin') app.quit();
 });

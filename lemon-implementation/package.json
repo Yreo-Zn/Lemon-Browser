@@ -1,0 +1,52 @@
+{
+  "name": "@lemon-browser/constitution-implementation",
+  "version": "1.0.0",
+  "description": "CoRax v1 Post-ASI Constitution implementation for Lemon Browser",
+  "type": "module",
+  "main": "src/index.js",
+  "author": "Lemon Browser Constitutional Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "build": "npm run build:layer1 && npm run build:layer2 && npm run build:layer3 && npm run build:layer4",
+    "build:layer1": "node scripts/build-layer1.js",
+    "build:layer2": "node scripts/build-layer2.js",
+    "build:layer3": "node scripts/build-layer3.js",
+    "build:layer4": "node scripts/build-layer4.js",
+    "demo": "node scripts/demo.js",
+    "integration": "node scripts/integration-test.js",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:layer1": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/layer1/",
+    "test:layer2": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/layer2/",
+    "test:layer3": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/layer3/",
+    "test:layer4": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/layer4/",
+    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
+    "lint": "eslint src/ tests/",
+    "dev": "nodemon --exec 'npm test'",
+    "validate": "node scripts/validate-constitution.js"
+  },
+  "dependencies": {
+    "crypto": "^1.0.1",
+    "sqlite3": "^5.1.6",
+    "keytar": "^7.9.0",
+    "uuid": "^9.0.0",
+    "electron": "^40.4.1",
+    "yup": "^1.2.0"
+  },
+  "devDependencies": {
+    "jest": "^29.5.0",
+    "eslint": "^8.43.0",
+    "nodemon": "^3.0.1",
+    "@types/node": "^20.0.0"
+  },
+  "keywords": [
+    "lemon-browser",
+    "constitution",
+    "corax",
+    "autonomous-agent",
+    "post-asi",
+    "governance"
+  ]
+}

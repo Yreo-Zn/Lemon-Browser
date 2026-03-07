@@ -8,6 +8,16 @@
 
 const { app, session, BrowserWindow, Menu, MenuItem } = require('electron');
 const path = require('path');
+const { getFramework } = require('./constitution');
+
+/** Log security events to the constitutional audit trail (PETREA 3). */
+function auditLog(entry) {
+  try {
+    const fw = getFramework();
+    if (!fw || !fw.isInitialized) return;
+    fw.getPetrea('auditTrail').log(entry);
+  } catch { /* non-blocking */ }
+}
 
 /**
  * Configura CSP headers para la sesión por defecto.
@@ -21,13 +31,13 @@ function setupCSP() {
         responseHeaders: {
           ...details.responseHeaders,
           'Content-Security-Policy': [
-            "default-src 'self'; " +
-            "script-src 'self'; " +
-            "style-src 'self' 'unsafe-inline'; " +
-            "img-src 'self' data: https:; " +
-            "font-src 'self' data:; " +
+            "default-src 'self' file:; " +
+            "script-src 'self' file:; " +
+            "style-src 'self' file: 'unsafe-inline'; " +
+            "img-src 'self' file: data: https:; " +
+            "font-src 'self' file: data:; " +
             "connect-src 'self' https:; " +
-            "frame-src 'none'"
+            "frame-src file:"
           ]
         }
       });
@@ -62,6 +72,11 @@ function setupWebviewSecurity(win) {
 function setupWebContentsHandlers() {
   app.on('web-contents-created', (_event, contents) => {
     if (contents.getType() === 'webview') {
+      // Suppress benign ERR_ABORTED for about:blank navigations
+      contents.on('did-fail-load', (_e, errorCode, _desc, validatedURL) => {
+        if (errorCode === -3 && validatedURL === 'about:blank') return;
+      });
+
       // Redirigir new-window a nueva pestaña en el renderer principal
       contents.setWindowOpenHandler((details) => {
         const windows = BrowserWindow.getAllWindows();
@@ -69,6 +84,7 @@ function setupWebContentsHandlers() {
         if (win) {
           win.webContents.send('browser-new-tab', details.url);
         }
+        auditLog({ event: 'popup_redirected', url: details.url });
         return { action: 'deny' };
       });
 
@@ -106,6 +122,7 @@ function showExtensionInstallMenu(extensionId, source, ipcChannel) {
       const windows = BrowserWindow.getAllWindows();
       const win = windows[0];
       if (win) {
+        auditLog({ event: 'extension_install_requested', source, extensionId });
         win.webContents.send(ipcChannel, extensionId);
       }
     }

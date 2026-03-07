@@ -10,6 +10,16 @@
 
 <body>
 
+    <!-- Resize handles for frameless transparent window -->
+    <div class="resize-handle resize-n"  data-edge="top"></div>
+    <div class="resize-handle resize-s"  data-edge="bottom"></div>
+    <div class="resize-handle resize-e"  data-edge="right"></div>
+    <div class="resize-handle resize-w"  data-edge="left"></div>
+    <div class="resize-handle resize-nw" data-edge="top-left"></div>
+    <div class="resize-handle resize-ne" data-edge="top-right"></div>
+    <div class="resize-handle resize-sw" data-edge="bottom-left"></div>
+    <div class="resize-handle resize-se" data-edge="bottom-right"></div>
+
     <div class="search-wrapper">
         <div id="title-bar-drag-area"></div>
 
@@ -18,7 +28,7 @@
             <div id="suggestions" class="glass"></div>
 
             <div id="preview-container" class="glass">
-                <webview id="preview-view" src="about:blank" allowpopups></webview>
+                <webview id="preview-view" allowpopups></webview>
             </div>
         </div>
 
@@ -31,6 +41,9 @@
                 <div id="engine-dropdown" class="glass hidden">
                     <!-- Javascript will populate this -->
                 </div>
+            </div>
+            <div id="corax-toggle-btn" title="CoRax Panel">
+                <span class="corax-btn-symbol">◎</span>
             </div>
             <div id="settings-btn" title="Configuración">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 512 512">
@@ -49,9 +62,76 @@
 
     <div id="main-browser-container" class="hidden"></div>
 
+    <!-- Synapse Interface — post-ASI navigation paradigm -->
+    <div id="ambient-edge" class="hidden"></div>
+    <div id="synapse-bar" class="hidden">
+        <div id="synapse-glow"></div>
+        <div id="synapse-particles"></div>
+        <button id="synapse-back" class="synapse-nav" title="Atrás" disabled>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </button>
+        <div id="synapse-center" title="Navegar · Ctrl+L">
+            <span id="synapse-domain">Nueva pestaña</span>
+        </div>
+        <button id="synapse-forward" class="synapse-nav" title="Adelante" disabled>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+        <div id="synapse-status" title="Estado constitucional">
+            <span id="synapse-shield">⛨</span>
+        </div>
+        <div id="synapse-corax" title="CoRax · post-ASI">
+            <span class="synapse-corax-dot">◎</span>
+        </div>
+    </div>
+
+    <!-- Command Surface — intelligent navigation overlay -->
+    <div id="command-surface" class="hidden">
+        <div id="command-backdrop"></div>
+        <div id="command-card">
+            <div id="command-page-ctx"></div>
+            <div id="command-input-row">
+                <span class="command-prompt">◎</span>
+                <input type="text" id="command-input" placeholder="Navega, busca o pide a CoRax..." autocomplete="off" spellcheck="false">
+            </div>
+            <div id="command-actions">
+                <button class="cmd-action" data-action="reload" title="Recargar página">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+                    <span>Recargar</span>
+                </button>
+                <button class="cmd-action" data-action="find" title="Buscar en página">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                    <span>Buscar</span>
+                </button>
+                <button class="cmd-action" data-action="copy" title="Copiar enlace">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                    <span>Copiar URL</span>
+                </button>
+                <button class="cmd-action" data-action="corax" title="Panel CoRax">
+                    <span style="font-size:14px">◎</span>
+                    <span>CoRax</span>
+                </button>
+            </div>
+            <div id="command-tabs-preview"></div>
+        </div>
+    </div>
+
+    <!-- Find-in-Page Bar -->
+    <div id="find-bar" class="glass hidden">
+        <input type="text" id="find-input" placeholder="Find in page..." autocomplete="off">
+        <span id="find-count"></span>
+        <button id="find-prev-btn" class="find-btn" title="Previous (Shift+F3)">
+            <svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 8L6 4L10 8" stroke="white" fill="none" stroke-width="1.5"/></svg>
+        </button>
+        <button id="find-next-btn" class="find-btn" title="Next (F3)">
+            <svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 4L6 8L10 4" stroke="white" fill="none" stroke-width="1.5"/></svg>
+        </button>
+        <button id="find-close-btn" class="find-btn" title="Close (Escape)">
+            <svg width="10" height="10" viewBox="0 0 10 10"><path d="M1,1 L9,9 M9,1 L1,9" stroke="white" fill="none" stroke-width="1.5"/></svg>
+        </button>
+    </div>
+
     <div id="settings-container" class="hidden">
-        <webview id="settings-webview" src="about:blank">
-        </webview>
+        <webview id="settings-webview"></webview>
     </div>
 
     <div id="window-controls-container">
@@ -132,6 +212,27 @@
                 <div id="tutorial-dots"></div>
                 <button id="tutorial-next" class="glass-btn accent">Siguiente</button>
             </div>
+        </div>
+    </div>
+
+    <!-- CORAX PANEL -->
+    <div id="corax-panel" class="glass">
+        <div class="corax-panel-header">
+            <span class="corax-symbol-lg">◎</span>
+            <span class="corax-panel-title">CoRax</span>
+            <div id="corax-close-btn" class="win-btn" title="Cerrar panel">
+                <svg width="10" height="10" viewBox="0 0 10 10">
+                    <path d="M1,1 L9,9 M9,1 L1,9" stroke="white" fill="none" />
+                </svg>
+            </div>
+        </div>
+        <div id="corax-status-content"></div>
+        <div class="corax-section-label">Skills</div>
+        <div id="corax-skills-list"></div>
+        <div class="corax-section-label">Log</div>
+        <div id="corax-log"></div>
+        <div class="corax-cmd-bar">
+            <input type="text" id="corax-cmd-input" placeholder="Comando CoRax..." autocomplete="off">
         </div>
     </div>
 

@@ -1,19 +1,19 @@
 #!/usr/bin/env node
 /**
- * Lemon Browser MCP Server — Browser Tools (Testing & Debugging Bridge)
- * =====================================================================
+ * Lemon Browser MCP Server — Browser Tools (Full Skill Coverage)
+ * ===============================================================
  * Swarm Node: Lemon Browser · Capa 5 (Tool Design + MCP)
  * Constitución CoRax v0 · Art. 2.1 (MCP-First)
  *
- * 5 tools for efficient browser testing via Chrome DevTools Protocol (CDP).
+ * 15 tools covering all 5 CoRax skills via Chrome DevTools Protocol (CDP).
  * Uses Node 22 native WebSocket (no ws dependency needed).
  *
- * Tools:
- *   lemon_launch  — Start browser with CDP debugging
- *   lemon_stop    — Stop browser
- *   lemon_eval    — Execute JS in renderer context
- *   lemon_logs    — Read main process log file
- *   lemon_errors  — Get collected runtime errors from CDP
+ * Skills → Tools:
+ *   browser-testing  — lemon_launch, lemon_stop, lemon_screenshot, lemon_eval, lemon_logs, lemon_errors
+ *   tab-mgr          — lemon_navigate, lemon_new_tab, lemon_close_tab, lemon_list_tabs, lemon_switch_tab
+ *   settings-mgr     — lemon_set_search_engine, lemon_get_settings, lemon_set_setting
+ *   ghost-mode       — lemon_ghost_mode
+ *   extension-mgr    — lemon_install_extension
  */
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
@@ -64,6 +64,14 @@ let collectedErrors = [];
 const log = (msg) => process.stderr.write(`[lemon-mcp] ${msg}\n`);
 
 // ── CDP Helpers ─────────────────────────────────────────────────
+
+/**
+ * Safely inject a string value into a CDP expression by JSON-serializing it.
+ * Prevents code injection via user-supplied URLs or other strings.
+ */
+function safeStr(s) {
+  return JSON.stringify(String(s));
+}
 
 function cdpHttpGet(endpoint) {
   return new Promise((resolve, reject) => {
@@ -271,6 +279,7 @@ function readLogs(lines = 50, levelFilter) {
 // ── MCP Server Setup ────────────────────────────────────────────
 
 const TOOLS = [
+  // ── browser-testing skill ──────────────────────────────────────
   {
     name: 'lemon_launch',
     description: 'Launch Lemon Browser with CDP debugging. Auto-connects to existing instance if running.',
@@ -280,18 +289,6 @@ const TOOLS = [
     name: 'lemon_stop',
     description: 'Stop Lemon Browser process.',
     inputSchema: { type: 'object', properties: {}, additionalProperties: false },
-  },
-  {
-    name: 'lemon_navigate',
-    description: 'Navigate the active tab to a URL, or open a new tab if none active.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        url: { type: 'string', description: 'URL to navigate to (e.g., https://example.com)' },
-      },
-      required: ['url'],
-      additionalProperties: false,
-    },
   },
   {
     name: 'lemon_screenshot',
@@ -334,6 +331,135 @@ const TOOLS = [
       additionalProperties: false,
     },
   },
+
+  // ── tab-mgr skill ─────────────────────────────────────────────
+  {
+    name: 'lemon_navigate',
+    description: 'Navigate the active tab to a URL. If no tabs are open, creates a new one.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: 'URL to navigate to (e.g., https://example.com)' },
+      },
+      required: ['url'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'lemon_new_tab',
+    description: 'Open a URL in a new tab (always creates a new tab, even if one is active).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: 'URL to open in the new tab' },
+      },
+      required: ['url'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'lemon_close_tab',
+    description: 'Close a tab by index. If no index given, closes the active tab.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        index: { type: 'number', description: 'Tab index (0-based). Omit to close active tab.' },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'lemon_list_tabs',
+    description: 'List all open tabs with their index, URL, title, and active status.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+  },
+  {
+    name: 'lemon_switch_tab',
+    description: 'Switch to a tab by index.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        index: { type: 'number', description: 'Tab index (0-based) to switch to' },
+      },
+      required: ['index'],
+      additionalProperties: false,
+    },
+  },
+
+  // ── settings-mgr skill ────────────────────────────────────────
+  {
+    name: 'lemon_set_search_engine',
+    description: 'Change the active search engine. Options: google, duckduckgo, bing, ecosia.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        engine: {
+          type: 'string',
+          description: 'Engine key: google | duckduckgo | bing | ecosia',
+          enum: ['google', 'duckduckgo', 'bing', 'ecosia'],
+        },
+      },
+      required: ['engine'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'lemon_get_settings',
+    description: 'Get current browser settings (all or a specific key).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        key: { type: 'string', description: 'Specific setting key to read. Omit for all settings.' },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'lemon_set_setting',
+    description: 'Change a browser setting by key.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        key: { type: 'string', description: 'Setting key (e.g., "accent-color", "remember-pages-toggle", "recent-sites-limit")' },
+        value: { description: 'Setting value (string, number, or boolean)' },
+      },
+      required: ['key', 'value'],
+      additionalProperties: false,
+    },
+  },
+
+  // ── ghost-mode skill ──────────────────────────────────────────
+  {
+    name: 'lemon_ghost_mode',
+    description: 'Set ghost mode (click-through transparency). interactive=true makes browser clickable, false makes it transparent/click-through.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        interactive: { type: 'boolean', description: 'true = interactive (normal), false = ghost (click-through)' },
+      },
+      required: ['interactive'],
+      additionalProperties: false,
+    },
+  },
+
+  // ── extension-mgr skill ───────────────────────────────────────
+  {
+    name: 'lemon_install_extension',
+    description: 'Install a browser extension from Chrome Web Store or Edge Add-ons by its ID.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        extensionId: { type: 'string', description: 'Extension ID from Chrome Web Store or Edge Add-ons' },
+        store: {
+          type: 'string',
+          description: 'Store to install from (default: chrome)',
+          enum: ['chrome', 'edge'],
+        },
+      },
+      required: ['extensionId'],
+      additionalProperties: false,
+    },
+  },
 ];
 
 const server = new Server(
@@ -354,6 +480,9 @@ server.setRequestHandler(
 
     try {
       switch (name) {
+
+        // ── browser-testing skill ──────────────────────────────────
+
         case 'lemon_launch': {
           const info = await launchBrowser();
           return { content: [{ type: 'text', text: JSON.stringify(info) }] };
@@ -362,28 +491,6 @@ server.setRequestHandler(
         case 'lemon_stop': {
           const result = stopBrowser();
           return { content: [{ type: 'text', text: result }] };
-        }
-
-        case 'lemon_navigate': {
-          if (!ws || ws.readyState !== WebSocket.OPEN) await cdpConnect();
-          const { url } = args;
-          const expr = `
-            import('./renderer/state.js').then(m => {
-              const state = m.state;
-              if (state.activePageIndex >= 0 && state.openPages[state.activePageIndex]) {
-                state.openPages[state.activePageIndex].webview.loadURL('${url}');
-                return 'Navigated active tab to ' + '${url}';
-              } else {
-                return import('./renderer/tabs.js').then(t => {
-                  t.navigateTo('${url}');
-                  return 'Opened new tab to ' + '${url}';
-                });
-              }
-            })
-          `;
-          const res = await cdpSend('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
-          if (res.exceptionDetails) throw new Error(res.exceptionDetails.exception.description || res.exceptionDetails.text);
-          return { content: [{ type: 'text', text: res.result.value }] };
         }
 
         case 'lemon_screenshot': {
@@ -398,15 +505,10 @@ server.setRequestHandler(
         }
 
         case 'lemon_eval': {
-          // Auto-reconnect if needed
           if (!ws || ws.readyState !== WebSocket.OPEN) {
-            try {
-              await cdpConnect();
-            } catch {
-              return {
-                content: [{ type: 'text', text: 'CDP not connected. Use lemon_launch first.' }],
-                isError: true,
-              };
+            try { await cdpConnect(); }
+            catch {
+              return { content: [{ type: 'text', text: 'CDP not connected. Use lemon_launch first.' }], isError: true };
             }
           }
 
@@ -419,13 +521,7 @@ server.setRequestHandler(
 
           if (result.exceptionDetails) {
             const ex = result.exceptionDetails;
-            return {
-              content: [{
-                type: 'text',
-                text: `Error: ${ex.text}\n${ex.exception?.description || ''}`,
-              }],
-              isError: true,
-            };
+            return { content: [{ type: 'text', text: `Error: ${ex.text}\n${ex.exception?.description || ''}` }], isError: true };
           }
 
           const val = result.result;
@@ -439,7 +535,6 @@ server.setRequestHandler(
           } else {
             text = `[${val.type}]`;
           }
-
           return { content: [{ type: 'text', text }] };
         }
 
@@ -451,12 +546,171 @@ server.setRequestHandler(
         case 'lemon_errors': {
           const snapshot = [...collectedErrors];
           if (args.clear !== false) collectedErrors = [];
-
-          if (snapshot.length === 0) {
-            return { content: [{ type: 'text', text: 'No errors collected.' }] };
-          }
-
+          if (snapshot.length === 0) return { content: [{ type: 'text', text: 'No errors collected.' }] };
           return { content: [{ type: 'text', text: JSON.stringify(snapshot, null, 2) }] };
+        }
+
+        // ── tab-mgr skill ─────────────────────────────────────────
+
+        case 'lemon_navigate': {
+          if (!ws || ws.readyState !== WebSocket.OPEN) await cdpConnect();
+          const url = safeStr(args.url);
+          const expr = `
+            import('./renderer/state.js').then(m => {
+              const s = m.state;
+              if (s.activePageIndex >= 0 && s.openPages[s.activePageIndex]?.webview) {
+                s.openPages[s.activePageIndex].webview.loadURL(${url});
+                return 'Navigated active tab to ' + ${url};
+              } else {
+                return import('./renderer/tabs.js').then(t => {
+                  t.navigateTo(${url});
+                  return 'Opened new tab to ' + ${url};
+                });
+              }
+            })`;
+          const res = await cdpSend('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
+          if (res.exceptionDetails) throw new Error(res.exceptionDetails.exception?.description || res.exceptionDetails.text);
+          return { content: [{ type: 'text', text: res.result.value }] };
+        }
+
+        case 'lemon_new_tab': {
+          if (!ws || ws.readyState !== WebSocket.OPEN) await cdpConnect();
+          const url = safeStr(args.url);
+          const expr = `import('./renderer/tabs.js').then(t => { t.navigateTo(${url}); return 'Opened new tab: ' + ${url}; })`;
+          const res = await cdpSend('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
+          if (res.exceptionDetails) throw new Error(res.exceptionDetails.exception?.description || res.exceptionDetails.text);
+          return { content: [{ type: 'text', text: res.result.value }] };
+        }
+
+        case 'lemon_close_tab': {
+          if (!ws || ws.readyState !== WebSocket.OPEN) await cdpConnect();
+          const idx = args.index != null ? Number(args.index) : null;
+          const expr = idx != null
+            ? `import('./renderer/tabs.js').then(t => { t.closePageAtIndex(${idx}); return 'Closed tab at index ${idx}'; })`
+            : `import('./renderer/tabs.js').then(t => { t.closeCurrentPage(); return 'Closed active tab'; })`;
+          const res = await cdpSend('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
+          if (res.exceptionDetails) throw new Error(res.exceptionDetails.exception?.description || res.exceptionDetails.text);
+          return { content: [{ type: 'text', text: res.result.value }] };
+        }
+
+        case 'lemon_list_tabs': {
+          if (!ws || ws.readyState !== WebSocket.OPEN) await cdpConnect();
+          const expr = `
+            import('./renderer/state.js').then(m => {
+              const s = m.state;
+              return JSON.stringify(s.openPages.map((p, i) => ({
+                index: i,
+                url: p.webview ? p.webview.getURL() : (p.url || 'hibernated'),
+                title: p.name || '(untitled)',
+                active: i === s.activePageIndex,
+                hibernated: !p.webview,
+              })));
+            })`;
+          const res = await cdpSend('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
+          if (res.exceptionDetails) throw new Error(res.exceptionDetails.exception?.description || res.exceptionDetails.text);
+          const tabs = JSON.parse(res.result.value);
+          if (tabs.length === 0) return { content: [{ type: 'text', text: 'No tabs open.' }] };
+          const formatted = tabs.map(t =>
+            `${t.active ? '→' : ' '} [${t.index}] ${t.title}${t.hibernated ? ' 💤' : ''}\n    ${t.url}`
+          ).join('\n');
+          return { content: [{ type: 'text', text: `${tabs.length} tab(s) open:\n${formatted}` }] };
+        }
+
+        case 'lemon_switch_tab': {
+          if (!ws || ws.readyState !== WebSocket.OPEN) await cdpConnect();
+          const idx = Number(args.index);
+          const expr = `
+            import('./renderer/state.js').then(m => {
+              if (${idx} < 0 || ${idx} >= m.state.openPages.length)
+                throw new Error('Tab index ${idx} out of range (0-' + (m.state.openPages.length - 1) + ')');
+              return import('./renderer/tabs.js').then(t => {
+                t.switchToPage(${idx});
+                return 'Switched to tab ${idx}';
+              });
+            })`;
+          const res = await cdpSend('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
+          if (res.exceptionDetails) throw new Error(res.exceptionDetails.exception?.description || res.exceptionDetails.text);
+          return { content: [{ type: 'text', text: res.result.value }] };
+        }
+
+        // ── settings-mgr skill ────────────────────────────────────
+
+        case 'lemon_set_search_engine': {
+          if (!ws || ws.readyState !== WebSocket.OPEN) await cdpConnect();
+          const engine = safeStr(args.engine);
+          const expr = `
+            Promise.all([
+              import('./renderer/config.js'),
+              import('./renderer/state.js'),
+              import('./renderer/settings-manager.js'),
+              import('./renderer/search.js'),
+            ]).then(([cfg, st, sm, sr]) => {
+              const key = ${engine};
+              if (!cfg.searchEngines[key]) throw new Error('Unknown engine: ' + key);
+              st.state.currentEngine = key;
+              st.state.globalSettings['preferredEngine'] = key;
+              sm.saveGlobalSettings();
+              sr.updateEngineUI();
+              return 'Search engine set to: ' + cfg.searchEngines[key].name;
+            })`;
+          const res = await cdpSend('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
+          if (res.exceptionDetails) throw new Error(res.exceptionDetails.exception?.description || res.exceptionDetails.text);
+          return { content: [{ type: 'text', text: res.result.value }] };
+        }
+
+        case 'lemon_get_settings': {
+          if (!ws || ws.readyState !== WebSocket.OPEN) await cdpConnect();
+          const key = args.key ? safeStr(args.key) : null;
+          const expr = key
+            ? `import('./renderer/state.js').then(m => JSON.stringify(m.state.globalSettings[${key}]))`
+            : `import('./renderer/state.js').then(m => JSON.stringify(m.state.globalSettings, null, 2))`;
+          const res = await cdpSend('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
+          if (res.exceptionDetails) throw new Error(res.exceptionDetails.exception?.description || res.exceptionDetails.text);
+          return { content: [{ type: 'text', text: res.result.value || 'undefined' }] };
+        }
+
+        case 'lemon_set_setting': {
+          if (!ws || ws.readyState !== WebSocket.OPEN) await cdpConnect();
+          const key = safeStr(args.key);
+          const value = JSON.stringify(args.value);
+          const expr = `
+            Promise.all([
+              import('./renderer/state.js'),
+              import('./renderer/settings-manager.js'),
+            ]).then(([st, sm]) => {
+              st.state.globalSettings[${key}] = ${value};
+              sm.saveGlobalSettings();
+              return 'Setting ' + ${key} + ' = ' + JSON.stringify(${value});
+            })`;
+          const res = await cdpSend('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
+          if (res.exceptionDetails) throw new Error(res.exceptionDetails.exception?.description || res.exceptionDetails.text);
+          return { content: [{ type: 'text', text: res.result.value }] };
+        }
+
+        // ── ghost-mode skill ──────────────────────────────────────
+
+        case 'lemon_ghost_mode': {
+          if (!ws || ws.readyState !== WebSocket.OPEN) await cdpConnect();
+          const interactive = Boolean(args.interactive);
+          const expr = `import('./renderer/ghost-mode.js').then(m => { m.setInteractive(${interactive}); return 'Ghost mode: ${interactive ? 'interactive (normal)' : 'ghost (click-through)'}'; })`;
+          const res = await cdpSend('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
+          if (res.exceptionDetails) throw new Error(res.exceptionDetails.exception?.description || res.exceptionDetails.text);
+          return { content: [{ type: 'text', text: res.result.value }] };
+        }
+
+        // ── extension-mgr skill ───────────────────────────────────
+
+        case 'lemon_install_extension': {
+          if (!ws || ws.readyState !== WebSocket.OPEN) await cdpConnect();
+          const extId = safeStr(args.extensionId);
+          const store = args.store || 'chrome';
+          const ipcCall = store === 'edge'
+            ? `window.electronAPI.invoke('download-and-install-edge-crx', ${extId})`
+            : `window.electronAPI.invoke('download-and-install-crx', ${extId})`;
+          const expr = `${ipcCall}.then(r => JSON.stringify(r))`;
+          const res = await cdpSend('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
+          if (res.exceptionDetails) throw new Error(res.exceptionDetails.exception?.description || res.exceptionDetails.text);
+          return { content: [{ type: 'text', text: `Extension install result: ${res.result.value}` }] };
         }
 
         default:

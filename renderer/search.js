@@ -15,12 +15,7 @@ export function hidePreview() {
   if (dom.wrapper) dom.wrapper.classList.remove('with-preview');
   dom.previewContainer.classList.remove('show');
   if (dom.previewView) {
-    try {
-      dom.previewView.stop();
-      dom.previewView.src = 'about:blank';
-    } catch (_) {
-      dom.previewView.src = 'about:blank';
-    }
+    try { dom.previewView.stop(); } catch (_) {}
   }
 }
 
