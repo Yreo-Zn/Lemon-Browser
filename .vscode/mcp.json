@@ -1,2 +1,11 @@
-º  }
+{
+  "servers": {
+    "lemon-browser": {
+      "command": "node",
+      "args": ["${workspaceFolder}/corax/mcp-servers/browser-tools/server.js"],
+      "env": {
+        "SYSTEM_PROMPT_PATH": "${workspaceFolder}/MASTER_SYSTEM_PROMPT.md"
+      }
+    }
+  }
 }
