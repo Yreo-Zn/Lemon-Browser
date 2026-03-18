@@ -739,9 +739,26 @@ const TOOLS = [
   },
 ];
 
+// Load system prompt from env (optional). This is useful when the MCP runner
+// supports passing in a prompt path via config (e.g. llm mcp). If not provided,
+// the server still works as a pure tool server.
+const SYSTEM_PROMPT_PATH = process.env.SYSTEM_PROMPT_PATH;
+let SYSTEM_PROMPT;
+if (SYSTEM_PROMPT_PATH) {
+  try {
+    SYSTEM_PROMPT = fs.readFileSync(SYSTEM_PROMPT_PATH, 'utf8');
+    log(`Loaded system prompt from ${SYSTEM_PROMPT_PATH}`);
+  } catch (e) {
+    log(`Failed to read system prompt at ${SYSTEM_PROMPT_PATH}: ${e.message}`);
+  }
+}
+
+const serverOptions = { capabilities: { tools: {} } };
+if (SYSTEM_PROMPT) serverOptions.systemPrompt = SYSTEM_PROMPT;
+
 const server = new Server(
   { name: 'lemon-browser', version: '1.0.0' },
-  { capabilities: { tools: {} } },
+  serverOptions,
 );
 
 // Use dynamic handler registration compatible with SDK v1.x

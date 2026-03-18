@@ -1,0 +1,126 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build: Layer 1 (7 Petreas)",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "build:layer1"],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "problemMatcher": ["$eslint-compact"],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Build: Layer 2 (SOUL_TEMPLATE)",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "build:layer2"],
+      "group": "build",
+      "dependsOn": ["Build: Layer 1 (7 Petreas)"]
+    },
+    {
+      "label": "Build: Layer 3 (Skill Executor)",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "build:layer3"],
+      "group": "build",
+      "dependsOn": ["Build: Layer 2 (SOUL_TEMPLATE)"]
+    },
+    {
+      "label": "Build: Layer 4 (HEARTBEAT)",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "build:layer4"],
+      "group": "build",
+      "dependsOn": ["Build: Layer 3 (Skill Executor)"]
+    },
+    {
+      "label": "Build: All Layers",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "build"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "Test: Layer 1",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "test:layer1"],
+      "group": "test"
+    },
+    {
+      "label": "Test: Layer 2",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "test:layer2"],
+      "group": "test"
+    },
+    {
+      "label": "Test: Layer 3",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "test:layer3"],
+      "group": "test"
+    },
+    {
+      "label": "Test: Layer 4",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "test:layer4"],
+      "group": "test"
+    },
+    {
+      "label": "Test: All (Watch Mode)",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "test:watch"],
+      "group": "test",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^([^\\s].*)\\((\\d+):(\\d+)\\):\\s+([^\\s].*)$",
+          "file": 1,
+          "location": 2,
+          "message": 4
+        }
+      }
+    },
+    {
+      "label": "Validate: Constitution Integrity",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "validate"],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true
+      }
+    },
+    {
+      "label": "Dev: Watch & Test",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "dev"],
+      "group": "test",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^Test Suites: (.*)",
+          "file": 0
+        }
+      }
+    }
+  ]
+}

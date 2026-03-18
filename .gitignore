@@ -22,7 +22,6 @@ builder-effective-config.yaml
 extensions/
 
 # ── IDE ──────────────────────────────────────────────────────
-.vscode/
 .idea/
 
 # ── Agent artifacts ──────────────────────────────────────────
