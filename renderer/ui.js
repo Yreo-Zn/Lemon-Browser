@@ -22,6 +22,20 @@ export function setupWindowControls() {
   if (dom.minBtn) dom.minBtn.onclick = () => window.electronAPI.windowMinimize();
   if (dom.maxBtn) dom.maxBtn.onclick = () => window.electronAPI.windowMaximize();
   if (dom.closeBtn) dom.closeBtn.onclick = () => window.electronAPI.windowClose();
+
+  // Set initial icon based on maximized state
+  window.electronAPI.getMaximizedState().then(isMaximized => {
+    updateMaxBtn(isMaximized);
+  }).catch(() => {});
+}
+
+const svgMaximize = '<svg width="10" height="10" viewBox="0 0 10 10"><rect width="9" height="9" x="0.5" y="0.5" fill="none" stroke="white"/></svg>';
+const svgRestore = '<svg width="10" height="10" viewBox="0 0 10 10"><rect width="7" height="7" x="0" y="3" fill="none" stroke="white"/><polyline points="3,3 3,0.5 9.5,0.5 9.5,7 7,7" fill="none" stroke="white"/></svg>';
+
+function updateMaxBtn(isMaximized) {
+  if (!dom.maxBtn) return;
+  dom.maxBtn.innerHTML = isMaximized ? svgRestore : svgMaximize;
+  dom.maxBtn.title = isMaximized ? 'Restaurar' : 'Maximizar';
 }
 
 // ── Arrastre (Drag Pill) ────────────────────────────────────────
@@ -276,12 +290,13 @@ export function setupIPCListeners() {
   // ── IPC Listeners ─────────────────────────────────────────────
 
   window.electronAPI.onRequestInitialAdblock(() => {
-    const enabled = state.globalSettings['adblock-toggle'] === true;
+    const enabled = state.globalSettings['adblock-toggle'] !== false;
     window.electronAPI.setAdblockEnabled(enabled);
   });
 
   window.electronAPI.onWindowMaximizedState((isMaximized) => {
     document.body.classList.toggle('is-maximized', isMaximized);
+    updateMaxBtn(isMaximized);
     renderSavedPages();
   });
 
@@ -291,9 +306,14 @@ export function setupIPCListeners() {
 
     window.electronAPI.getMaximizedState().then(isMaximized => {
       document.body.classList.toggle('is-maximized', isMaximized);
+      updateMaxBtn(isMaximized);
     }).catch(() => {});
 
     renderSavedPages();
+  });
+
+  window.electronAPI.onWindowFullscreenState((isFullscreen) => {
+    document.body.classList.toggle('is-fullscreen', isFullscreen);
   });
 
   window.electronAPI.onBrowserGoBack(() => {
@@ -511,6 +531,17 @@ export function setupIPCListeners() {
       }, { once: true });
     } else {
       dom.settingsWebview.send('trigger-edge-extension-install', extensionId);
+    }
+  });
+
+  window.electronAPI.onTriggerOperaExtensionInstall(async (extensionSlug) => {
+    await openSettings();
+    if (dom.settingsWebview.isLoading()) {
+      dom.settingsWebview.addEventListener('dom-ready', () => {
+        dom.settingsWebview.send('trigger-opera-extension-install', extensionSlug);
+      }, { once: true });
+    } else {
+      dom.settingsWebview.send('trigger-opera-extension-install', extensionSlug);
     }
   });
 }

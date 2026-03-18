@@ -5,15 +5,22 @@
  * Swarm Node: Lemon Browser · Capa 5 (Tool Design + MCP)
  * Constitución CoRax v0 · Art. 2.1 (MCP-First)
  *
- * 15 tools covering all 5 CoRax skills via Chrome DevTools Protocol (CDP).
+ * 42 tools covering all 7 CoRax skills via Chrome DevTools Protocol (CDP).
  * Uses Node 22 native WebSocket (no ws dependency needed).
  *
  * Skills → Tools:
- *   browser-testing  — lemon_launch, lemon_stop, lemon_screenshot, lemon_eval, lemon_logs, lemon_errors
- *   tab-mgr          — lemon_navigate, lemon_new_tab, lemon_close_tab, lemon_list_tabs, lemon_switch_tab
- *   settings-mgr     — lemon_set_search_engine, lemon_get_settings, lemon_set_setting
- *   ghost-mode       — lemon_ghost_mode
- *   extension-mgr    — lemon_install_extension
+ *   browser-testing   — lemon_launch, lemon_stop, lemon_screenshot, lemon_eval, lemon_logs, lemon_errors
+ *   tab-mgr           — lemon_navigate, lemon_new_tab, lemon_close_tab, lemon_list_tabs, lemon_switch_tab,
+ *                        lemon_back, lemon_forward, lemon_reload, lemon_go_home, lemon_reopen_tab,
+ *                        lemon_page_info, lemon_find, lemon_zoom
+ *   settings-mgr      — lemon_set_search_engine, lemon_get_settings, lemon_set_setting, lemon_shortcuts, lemon_theme
+ *   ghost-mode        — lemon_ghost_mode, lemon_window
+ *   extension-mgr     — lemon_install_extension, lemon_list_extensions, lemon_remove_extension,
+ *                        lemon_extension_options, lemon_adblock
+ *   history-mgr       — lemon_history, lemon_history_search, lemon_history_clear
+ *   constitution-mgr  — lemon_audit_trail, lemon_bookmark, lemon_constitution_status,
+ *                        lemon_constitution_health, lemon_constitution_soul, lemon_constitution_heartbeat
+ *   corax-mgr         — lemon_corax_skills, lemon_corax_execute
  */
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
@@ -460,6 +467,276 @@ const TOOLS = [
       additionalProperties: false,
     },
   },
+
+  // ── history-mgr skill ─────────────────────────────────────────
+  {
+    name: 'lemon_history',
+    description: 'Search or list browsing history. Returns recent entries by default, or filters by query string.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Search query to filter history by URL or title. Omit to list recent entries.' },
+        limit: { type: 'number', description: 'Max entries to return (default: 30)' },
+        clear: { type: 'boolean', description: 'If true, clears all browsing history instead of searching.' },
+      },
+      additionalProperties: false,
+    },
+  },
+
+  // ── constitution-mgr skill ────────────────────────────────────
+  {
+    name: 'lemon_audit_trail',
+    description: 'Read the constitutional audit trail (PETREA 3). Returns recent audit entries from audit-trail.jsonl.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        lines: { type: 'number', description: 'Number of entries to return (default: 50)' },
+        severity: { type: 'string', description: 'Filter by severity: info | warning | violation' },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'lemon_bookmark',
+    description: 'List, add, or remove bookmarks (saved pages). Add requires the browser to be running with a tab open.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          description: 'Action to perform (default: list)',
+          enum: ['list', 'add', 'remove'],
+        },
+        url: { type: 'string', description: 'URL to add or remove. Required for add/remove.' },
+        name: { type: 'string', description: 'Display name for the bookmark (only for add).' },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'lemon_constitution_status',
+    description: 'Get the constitution framework status: active/inactive, 7 Petrea statuses, layer health, manifest info.',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+      additionalProperties: false,
+    },
+  },
+
+  // ── tab-mgr skill (navigation) ────────────────────────────────
+  {
+    name: 'lemon_back',
+    description: 'Navigate the active tab back in history.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+  },
+  {
+    name: 'lemon_forward',
+    description: 'Navigate the active tab forward in history.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+  },
+  {
+    name: 'lemon_reload',
+    description: 'Reload the active tab. Use hard=true to ignore cache.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        hard: { type: 'boolean', description: 'If true, reload ignoring cache (default: false)' },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'lemon_go_home',
+    description: 'Return to the home/search screen, closing all visible tabs UI.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+  },
+  {
+    name: 'lemon_find',
+    description: 'Find text within the active tab page. Use action=open to open find bar, action=next/prev to navigate matches, action=close to dismiss.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Text to search for on the page.' },
+        action: {
+          type: 'string',
+          description: 'Action: open (default, searches for query), next, prev, close',
+          enum: ['open', 'next', 'prev', 'close'],
+        },
+      },
+      additionalProperties: false,
+    },
+  },
+
+  // ── tab-mgr skill (tab operations) ────────────────────────────
+  {
+    name: 'lemon_reopen_tab',
+    description: 'Reopen the last closed tab (Ctrl+Shift+T equivalent). Supports up to 20 closed tabs.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+  },
+  {
+    name: 'lemon_page_info',
+    description: 'Get detailed info about the active tab: URL, title, loading state, zoom level, can-go-back/forward.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+  },
+  {
+    name: 'lemon_zoom',
+    description: 'Zoom the active tab in, out, or reset to default.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          description: 'Zoom action (default: reset)',
+          enum: ['in', 'out', 'reset'],
+        },
+        level: { type: 'number', description: 'Set absolute zoom level (e.g. 0 = 100%, 1 = 120%, -1 = 80%). Overrides action.' },
+      },
+      additionalProperties: false,
+    },
+  },
+
+  // ── extension-mgr skill (expanded) ────────────────────────────
+  {
+    name: 'lemon_list_extensions',
+    description: 'List all installed browser extensions with their ID, name, version, and status.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+  },
+  {
+    name: 'lemon_remove_extension',
+    description: 'Remove/uninstall a browser extension by its ID.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        extensionId: { type: 'string', description: 'Extension ID to remove' },
+      },
+      required: ['extensionId'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'lemon_extension_options',
+    description: 'Open the options/settings page of an installed extension.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        extensionId: { type: 'string', description: 'Extension ID whose options page to open' },
+      },
+      required: ['extensionId'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'lemon_adblock',
+    description: 'Enable or disable the built-in ad blocker (uBlock Origin).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        enabled: { type: 'boolean', description: 'true = enable adblock, false = disable' },
+      },
+      required: ['enabled'],
+      additionalProperties: false,
+    },
+  },
+
+  // ── ghost-mode skill (window control) ─────────────────────────
+  {
+    name: 'lemon_window',
+    description: 'Control the browser window: minimize, maximize, restore, or get current state.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          description: 'Window action',
+          enum: ['minimize', 'maximize', 'restore', 'state'],
+        },
+      },
+      required: ['action'],
+      additionalProperties: false,
+    },
+  },
+
+  // ── settings-mgr skill (expanded) ─────────────────────────────
+  {
+    name: 'lemon_shortcuts',
+    description: 'Get or update keyboard shortcuts. Pass shortcuts object to update, omit to read current shortcuts.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        shortcuts: {
+          type: 'object',
+          description: 'Map of action→key bindings to update (e.g. {"navigateBack":"Alt+Left"}). Omit to read current.',
+        },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'lemon_theme',
+    description: 'Change the browser theme: accent color, liquid-glass toggle, animation settings.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        accentColor: { type: 'string', description: 'Hex color (e.g. "#4CAF50")' },
+        liquidGlass: { type: 'boolean', description: 'Enable/disable liquid-glass theme' },
+        reduceMotion: { type: 'boolean', description: 'Enable/disable reduced motion' },
+      },
+      additionalProperties: false,
+    },
+  },
+  // ── history-mgr (extended) ──────────────────────────────────────
+  {
+    name: 'lemon_history_search',
+    description: 'Search browsing history by query string. Returns matching entries.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Search term to filter history entries' },
+        limit: { type: 'number', description: 'Max results to return (default 20)' },
+      },
+      required: ['query'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'lemon_history_clear',
+    description: 'Clear all browsing history.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+  },
+  // ── constitution-mgr (extended) ─────────────────────────────────
+  {
+    name: 'lemon_constitution_health',
+    description: 'Get the full health report of the constitutional framework (all 7 Petreas).',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+  },
+  {
+    name: 'lemon_constitution_soul',
+    description: 'Get the Soul Template — identity and personality parameters of the browser.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+  },
+  {
+    name: 'lemon_constitution_heartbeat',
+    description: 'Get the last heartbeat data from the constitutional vitality monitor.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+  },
+  // ── corax-mgr ───────────────────────────────────────────────────
+  {
+    name: 'lemon_corax_skills',
+    description: 'List all registered CoRax skills with their status and metadata.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+  },
+  {
+    name: 'lemon_corax_execute',
+    description: 'Execute a CoRax command by name with optional arguments.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        command: { type: 'string', description: 'CoRax command to execute (e.g. "browser-testing", "extension-mgr", "tab-mgr list")' },
+      },
+      required: ['command'],
+      additionalProperties: false,
+    },
+  },
 ];
 
 const server = new Server(
@@ -711,6 +988,576 @@ server.setRequestHandler(
           const res = await cdpSend('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
           if (res.exceptionDetails) throw new Error(res.exceptionDetails.exception?.description || res.exceptionDetails.text);
           return { content: [{ type: 'text', text: `Extension install result: ${res.result.value}` }] };
+        }
+
+        // ── history-mgr skill ─────────────────────────────────────
+
+        case 'lemon_history': {
+          if (args.clear) {
+            if (!ws || ws.readyState !== WebSocket.OPEN) await cdpConnect();
+            const expr = `window.electronAPI.historyClear().then(() => 'History cleared')`;
+            const res = await cdpSend('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
+            if (res.exceptionDetails) throw new Error(res.exceptionDetails.exception?.description || res.exceptionDetails.text);
+            return { content: [{ type: 'text', text: res.result.value }] };
+          }
+
+          // Read history.json directly from disk (works even if browser is not running)
+          const historyFile = path.join(DATA_DIR, 'history.json');
+          if (!fs.existsSync(historyFile)) return { content: [{ type: 'text', text: 'No history found.' }] };
+
+          let entries;
+          try { entries = JSON.parse(fs.readFileSync(historyFile, 'utf8')); }
+          catch { return { content: [{ type: 'text', text: 'History file corrupt or empty.' }] }; }
+
+          const limit = args.limit || 30;
+          if (args.query) {
+            const q = args.query.toLowerCase();
+            entries = entries.filter(e =>
+              (e.url && e.url.toLowerCase().includes(q)) ||
+              (e.title && e.title.toLowerCase().includes(q))
+            );
+          }
+          entries = entries.slice(-limit).reverse();
+
+          if (entries.length === 0) return { content: [{ type: 'text', text: 'No matching history entries.' }] };
+
+          const formatted = entries.map(e => {
+            const date = e.timestamp ? new Date(e.timestamp).toLocaleString() : '?';
+            return `[${date}] ${e.title || '(untitled)'}\n  ${e.url}`;
+          }).join('\n');
+          return { content: [{ type: 'text', text: `${entries.length} entries:\n${formatted}` }] };
+        }
+
+        // ── constitution-mgr skill ────────────────────────────────
+
+        case 'lemon_audit_trail': {
+          const auditFile = path.join(DATA_DIR, 'audit-trail.jsonl');
+          if (!fs.existsSync(auditFile)) return { content: [{ type: 'text', text: 'No audit trail found.' }] };
+
+          const content = fs.readFileSync(auditFile, 'utf8');
+          let lines = content.split('\n').filter(Boolean);
+
+          if (args.severity) {
+            const sev = args.severity.toLowerCase();
+            lines = lines.filter(line => {
+              try {
+                const entry = JSON.parse(line);
+                return (entry.severity || '').toLowerCase() === sev;
+              } catch { return false; }
+            });
+          }
+
+          const limit = args.lines || 50;
+          lines = lines.slice(-limit);
+
+          if (lines.length === 0) return { content: [{ type: 'text', text: 'No matching audit entries.' }] };
+
+          const formatted = lines.map(line => {
+            try {
+              const e = JSON.parse(line);
+              const ts = e.timestamp ? new Date(e.timestamp).toLocaleString() : '?';
+              return `[${ts}] [${(e.severity || 'info').toUpperCase()}] ${e.action || e.event || '?'} — ${e.detail || e.message || ''}`;
+            } catch { return line; }
+          }).join('\n');
+          return { content: [{ type: 'text', text: `${lines.length} audit entries:\n${formatted}` }] };
+        }
+
+        case 'lemon_bookmark': {
+          const action = args.action || 'list';
+
+          if (action === 'list') {
+            // Read savedPages from settings.json (works offline)
+            const settingsFile = path.join(DATA_DIR, 'settings.json');
+            if (!fs.existsSync(settingsFile)) return { content: [{ type: 'text', text: 'No bookmarks found.' }] };
+            let settings;
+            try { settings = JSON.parse(fs.readFileSync(settingsFile, 'utf8')); }
+            catch { return { content: [{ type: 'text', text: 'Settings file corrupt.' }] }; }
+            const saved = settings.savedPages || [];
+            if (saved.length === 0) return { content: [{ type: 'text', text: 'No bookmarks saved.' }] };
+            const formatted = saved.map((b, i) => `[${i}] ${b.name || '(untitled)'}\n    ${b.url}`).join('\n');
+            return { content: [{ type: 'text', text: `${saved.length} bookmark(s):\n${formatted}` }] };
+          }
+
+          if (action === 'add') {
+            if (!args.url) return { content: [{ type: 'text', text: 'url is required for add' }], isError: true };
+            if (!ws || ws.readyState !== WebSocket.OPEN) await cdpConnect();
+            const url = safeStr(args.url);
+            const name = safeStr(args.name || args.url);
+            const expr = `
+              Promise.all([
+                import('./renderer/state.js'),
+                import('./renderer/tabs.js'),
+                import('./renderer/settings-manager.js'),
+              ]).then(([st, tabs, sm]) => {
+                const site = { name: ${name}, url: ${url}, icon: 'https://www.google.com/favicon.ico' };
+                st.state.savedPages = st.state.savedPages.filter(s => s.url !== ${url});
+                st.state.savedPages.unshift(site);
+                st.state.globalSettings['savedPages'] = st.state.savedPages;
+                sm.saveGlobalSettings();
+                tabs.renderSavedPages();
+                return 'Bookmark added: ' + ${name};
+              })`;
+            const res = await cdpSend('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
+            if (res.exceptionDetails) throw new Error(res.exceptionDetails.exception?.description || res.exceptionDetails.text);
+            return { content: [{ type: 'text', text: res.result.value }] };
+          }
+
+          if (action === 'remove') {
+            if (!args.url) return { content: [{ type: 'text', text: 'url is required for remove' }], isError: true };
+            if (!ws || ws.readyState !== WebSocket.OPEN) await cdpConnect();
+            const url = safeStr(args.url);
+            const expr = `
+              Promise.all([
+                import('./renderer/state.js'),
+                import('./renderer/tabs.js'),
+                import('./renderer/settings-manager.js'),
+              ]).then(([st, tabs, sm]) => {
+                const before = st.state.savedPages.length;
+                st.state.savedPages = st.state.savedPages.filter(s => s.url !== ${url});
+                st.state.globalSettings['savedPages'] = st.state.savedPages;
+                sm.saveGlobalSettings();
+                tabs.renderSavedPages();
+                const removed = before - st.state.savedPages.length;
+                return removed > 0 ? 'Bookmark removed: ' + ${url} : 'Bookmark not found: ' + ${url};
+              })`;
+            const res = await cdpSend('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
+            if (res.exceptionDetails) throw new Error(res.exceptionDetails.exception?.description || res.exceptionDetails.text);
+            return { content: [{ type: 'text', text: res.result.value }] };
+          }
+
+          return { content: [{ type: 'text', text: `Unknown action: ${action}` }], isError: true };
+        }
+
+        case 'lemon_constitution_status': {
+          if (!ws || ws.readyState !== WebSocket.OPEN) await cdpConnect();
+          const expr = `window.electronAPI.coraxGetStatus().then(r => JSON.stringify(r))`;
+          const res = await cdpSend('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
+          if (res.exceptionDetails) throw new Error(res.exceptionDetails.exception?.description || res.exceptionDetails.text);
+
+          const status = JSON.parse(res.result.value);
+          const lines = [
+            `Constitution: ${status.constitutionActive ? 'ACTIVE' : 'INACTIVE'}`,
+            `Manifest: ${status.manifest ? `${status.manifest.name} v${status.manifest.version} (${status.manifest.constitution})` : 'N/A'}`,
+            `Skills: ${status.skillCount}`,
+            `MCP Ready: ${status.mcpReady ? 'Yes' : 'No'}`,
+          ];
+          if (status.petreas && status.petreas.length > 0) {
+            lines.push('', '7 Petreas:');
+            for (const p of status.petreas) {
+              lines.push(`  [${p.id}] ${p.name}: ${p.status === 'ok' ? '✓' : '✗ ' + p.status}`);
+            }
+          }
+          if (status.layers && status.layers.length > 0) {
+            lines.push('', 'Layers:');
+            for (const l of status.layers) {
+              lines.push(`  [${l.id}] ${l.name}: ${l.status === 'ok' ? '✓' : l.status}`);
+            }
+          }
+          return { content: [{ type: 'text', text: lines.join('\n') }] };
+        }
+
+        // ── tab-mgr skill (navigation) ────────────────────────────
+
+        case 'lemon_back': {
+          if (!ws || ws.readyState !== WebSocket.OPEN) await cdpConnect();
+          const expr = `
+            import('./renderer/state.js').then(m => {
+              const s = m.state;
+              if (s.activePageIndex >= 0 && s.openPages[s.activePageIndex]) {
+                const wv = s.openPages[s.activePageIndex].webview;
+                if (wv.canGoBack()) { wv.goBack(); return 'Navigated back'; }
+                return 'Cannot go back (no history)';
+              }
+              return 'No active tab';
+            })`;
+          const res = await cdpSend('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
+          if (res.exceptionDetails) throw new Error(res.exceptionDetails.exception?.description || res.exceptionDetails.text);
+          return { content: [{ type: 'text', text: res.result.value }] };
+        }
+
+        case 'lemon_forward': {
+          if (!ws || ws.readyState !== WebSocket.OPEN) await cdpConnect();
+          const expr = `
+            import('./renderer/state.js').then(m => {
+              const s = m.state;
+              if (s.activePageIndex >= 0 && s.openPages[s.activePageIndex]) {
+                const wv = s.openPages[s.activePageIndex].webview;
+                if (wv.canGoForward()) { wv.goForward(); return 'Navigated forward'; }
+                return 'Cannot go forward (no forward history)';
+              }
+              return 'No active tab';
+            })`;
+          const res = await cdpSend('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
+          if (res.exceptionDetails) throw new Error(res.exceptionDetails.exception?.description || res.exceptionDetails.text);
+          return { content: [{ type: 'text', text: res.result.value }] };
+        }
+
+        case 'lemon_reload': {
+          if (!ws || ws.readyState !== WebSocket.OPEN) await cdpConnect();
+          const hard = Boolean(args.hard);
+          const method = hard ? 'reloadIgnoringCache' : 'reload';
+          const expr = `
+            import('./renderer/state.js').then(m => {
+              const s = m.state;
+              if (s.activePageIndex >= 0 && s.openPages[s.activePageIndex]) {
+                s.openPages[s.activePageIndex].webview.${method}();
+                return '${hard ? 'Hard reloaded' : 'Reloaded'} active tab';
+              }
+              return 'No active tab';
+            })`;
+          const res = await cdpSend('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
+          if (res.exceptionDetails) throw new Error(res.exceptionDetails.exception?.description || res.exceptionDetails.text);
+          return { content: [{ type: 'text', text: res.result.value }] };
+        }
+
+        case 'lemon_go_home': {
+          if (!ws || ws.readyState !== WebSocket.OPEN) await cdpConnect();
+          const expr = `import('./renderer/tabs.js').then(t => { t.returnToHome(); return 'Returned to home screen'; })`;
+          const res = await cdpSend('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
+          if (res.exceptionDetails) throw new Error(res.exceptionDetails.exception?.description || res.exceptionDetails.text);
+          return { content: [{ type: 'text', text: res.result.value }] };
+        }
+
+        case 'lemon_find': {
+          if (!ws || ws.readyState !== WebSocket.OPEN) await cdpConnect();
+          const action = args.action || 'open';
+
+          if (action === 'close') {
+            const expr = `
+              import('./renderer/state.js').then(m => {
+                const s = m.state;
+                if (s.activePageIndex >= 0 && s.openPages[s.activePageIndex]) {
+                  try { s.openPages[s.activePageIndex].webview.stopFindInPage('clearSelection'); } catch(_) {}
+                }
+                return 'Find bar closed';
+              })`;
+            const res = await cdpSend('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
+            if (res.exceptionDetails) throw new Error(res.exceptionDetails.exception?.description || res.exceptionDetails.text);
+            return { content: [{ type: 'text', text: res.result.value }] };
+          }
+
+          if (action === 'next' || action === 'prev') {
+            if (!args.query) return { content: [{ type: 'text', text: 'query is required for find next/prev' }], isError: true };
+            const forward = action === 'next';
+            const query = safeStr(args.query);
+            const expr = `import('./renderer/state.js').then(m => {
+                const s = m.state;
+                if (s.activePageIndex >= 0 && s.openPages[s.activePageIndex]) {
+                  s.openPages[s.activePageIndex].webview.findInPage(${query}, { forward: ${forward}, findNext: true });
+                  return 'Find ${action}: ' + ${query};
+                }
+                return 'No active tab';
+              })`;
+            const res = await cdpSend('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
+            if (res.exceptionDetails) throw new Error(res.exceptionDetails.exception?.description || res.exceptionDetails.text);
+            return { content: [{ type: 'text', text: res.result.value }] };
+          }
+
+          // action === 'open' — search for query
+          if (!args.query) return { content: [{ type: 'text', text: 'query is required for find' }], isError: true };
+          const query = safeStr(args.query);
+          const expr = `
+            import('./renderer/state.js').then(m => {
+              const s = m.state;
+              if (s.activePageIndex >= 0 && s.openPages[s.activePageIndex]) {
+                s.openPages[s.activePageIndex].webview.findInPage(${query});
+                return 'Searching for: ' + ${query};
+              }
+              return 'No active tab';
+            })`;
+          const res = await cdpSend('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
+          if (res.exceptionDetails) throw new Error(res.exceptionDetails.exception?.description || res.exceptionDetails.text);
+          return { content: [{ type: 'text', text: res.result.value }] };
+        }
+
+        // ── tab-mgr skill (tab operations) ────────────────────────
+
+        case 'lemon_reopen_tab': {
+          if (!ws || ws.readyState !== WebSocket.OPEN) await cdpConnect();
+          const expr = `import('./renderer/tabs.js').then(t => { t.reopenLastClosedTab(); return 'Reopened last closed tab'; })`;
+          const res = await cdpSend('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
+          if (res.exceptionDetails) throw new Error(res.exceptionDetails.exception?.description || res.exceptionDetails.text);
+          return { content: [{ type: 'text', text: res.result.value }] };
+        }
+
+        case 'lemon_page_info': {
+          if (!ws || ws.readyState !== WebSocket.OPEN) await cdpConnect();
+          const expr = `
+            import('./renderer/state.js').then(m => {
+              const s = m.state;
+              if (s.activePageIndex < 0 || !s.openPages[s.activePageIndex]) return JSON.stringify({ error: 'No active tab' });
+              const p = s.openPages[s.activePageIndex];
+              const wv = p.webview;
+              return JSON.stringify({
+                index: s.activePageIndex,
+                url: wv.getURL(),
+                title: wv.getTitle(),
+                loading: wv.isLoading(),
+                canGoBack: wv.canGoBack(),
+                canGoForward: wv.canGoForward(),
+                zoomLevel: wv.getZoomLevel(),
+                favicon: p.favicon || null,
+                totalTabs: s.openPages.length,
+              });
+            })`;
+          const res = await cdpSend('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
+          if (res.exceptionDetails) throw new Error(res.exceptionDetails.exception?.description || res.exceptionDetails.text);
+          const info = JSON.parse(res.result.value);
+          if (info.error) return { content: [{ type: 'text', text: info.error }] };
+          const lines = [
+            `Tab [${info.index}/${info.totalTabs - 1}]: ${info.title}`,
+            `URL: ${info.url}`,
+            `Loading: ${info.loading ? 'yes' : 'no'}`,
+            `Zoom: ${info.zoomLevel === 0 ? '100%' : (100 + info.zoomLevel * 20) + '%'}`,
+            `Navigation: ${info.canGoBack ? '← back' : ''}${info.canGoBack && info.canGoForward ? ' | ' : ''}${info.canGoForward ? 'forward →' : ''}${!info.canGoBack && !info.canGoForward ? 'none' : ''}`,
+          ];
+          return { content: [{ type: 'text', text: lines.join('\n') }] };
+        }
+
+        case 'lemon_zoom': {
+          if (!ws || ws.readyState !== WebSocket.OPEN) await cdpConnect();
+          if (args.level != null) {
+            const lvl = Number(args.level);
+            const expr = `
+              import('./renderer/state.js').then(m => {
+                const s = m.state;
+                if (s.activePageIndex >= 0 && s.openPages[s.activePageIndex]) {
+                  s.openPages[s.activePageIndex].webview.setZoomLevel(${lvl});
+                  return 'Zoom set to level ${lvl}';
+                }
+                return 'No active tab';
+              })`;
+            const res = await cdpSend('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
+            if (res.exceptionDetails) throw new Error(res.exceptionDetails.exception?.description || res.exceptionDetails.text);
+            return { content: [{ type: 'text', text: res.result.value }] };
+          }
+          const action = args.action || 'reset';
+          const exprMap = {
+            in: `s.openPages[s.activePageIndex].webview.setZoomLevel(s.openPages[s.activePageIndex].webview.getZoomLevel() + 0.5); return 'Zoomed in';`,
+            out: `s.openPages[s.activePageIndex].webview.setZoomLevel(s.openPages[s.activePageIndex].webview.getZoomLevel() - 0.5); return 'Zoomed out';`,
+            reset: `s.openPages[s.activePageIndex].webview.setZoomLevel(0); return 'Zoom reset to 100%';`,
+          };
+          const body = exprMap[action] || exprMap.reset;
+          const expr = `
+            import('./renderer/state.js').then(m => {
+              const s = m.state;
+              if (s.activePageIndex >= 0 && s.openPages[s.activePageIndex]) { ${body} }
+              return 'No active tab';
+            })`;
+          const res = await cdpSend('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
+          if (res.exceptionDetails) throw new Error(res.exceptionDetails.exception?.description || res.exceptionDetails.text);
+          return { content: [{ type: 'text', text: res.result.value }] };
+        }
+
+        // ── extension-mgr skill (expanded) ────────────────────────
+
+        case 'lemon_list_extensions': {
+          if (!ws || ws.readyState !== WebSocket.OPEN) await cdpConnect();
+          const expr = `window.electronAPI.getExtensionsList().then(r => JSON.stringify(r))`;
+          const res = await cdpSend('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
+          if (res.exceptionDetails) throw new Error(res.exceptionDetails.exception?.description || res.exceptionDetails.text);
+          const exts = JSON.parse(res.result.value);
+          if (!exts || exts.length === 0) return { content: [{ type: 'text', text: 'No extensions installed.' }] };
+          const formatted = exts.map(e =>
+            `${e.name || e.id} v${e.version || '?'}\n  ID: ${e.id}\n  Path: ${e.path || '?'}`
+          ).join('\n\n');
+          return { content: [{ type: 'text', text: `${exts.length} extension(s):\n\n${formatted}` }] };
+        }
+
+        case 'lemon_remove_extension': {
+          if (!ws || ws.readyState !== WebSocket.OPEN) await cdpConnect();
+          const extId = safeStr(args.extensionId);
+          const expr = `window.electronAPI.removeExtension(${extId}).then(r => JSON.stringify(r))`;
+          const res = await cdpSend('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
+          if (res.exceptionDetails) throw new Error(res.exceptionDetails.exception?.description || res.exceptionDetails.text);
+          return { content: [{ type: 'text', text: `Extension removal result: ${res.result.value}` }] };
+        }
+
+        case 'lemon_extension_options': {
+          if (!ws || ws.readyState !== WebSocket.OPEN) await cdpConnect();
+          const extId = safeStr(args.extensionId);
+          const expr = `window.electronAPI.openExtensionOptions(${extId}); 'Opened options for ' + ${extId}`;
+          const res = await cdpSend('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
+          if (res.exceptionDetails) throw new Error(res.exceptionDetails.exception?.description || res.exceptionDetails.text);
+          return { content: [{ type: 'text', text: res.result.value }] };
+        }
+
+        case 'lemon_adblock': {
+          if (!ws || ws.readyState !== WebSocket.OPEN) await cdpConnect();
+          const enabled = Boolean(args.enabled);
+          const expr = `window.electronAPI.setAdblockEnabled(${enabled}); 'Adblock ${enabled ? 'enabled' : 'disabled'}'`;
+          const res = await cdpSend('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
+          if (res.exceptionDetails) throw new Error(res.exceptionDetails.exception?.description || res.exceptionDetails.text);
+          return { content: [{ type: 'text', text: res.result.value }] };
+        }
+
+        // ── ghost-mode skill (window control) ─────────────────────
+
+        case 'lemon_window': {
+          if (!ws || ws.readyState !== WebSocket.OPEN) await cdpConnect();
+          const action = args.action;
+          if (action === 'state') {
+            const expr = `window.electronAPI.getMaximizedState().then(r => JSON.stringify({ maximized: r }))`;
+            const res = await cdpSend('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
+            if (res.exceptionDetails) throw new Error(res.exceptionDetails.exception?.description || res.exceptionDetails.text);
+            return { content: [{ type: 'text', text: `Window state: ${res.result.value}` }] };
+          }
+          const fnMap = { minimize: 'windowMinimize', maximize: 'windowMaximize', restore: 'windowMaximize' };
+          const fn = fnMap[action];
+          if (!fn) return { content: [{ type: 'text', text: `Unknown action: ${action}` }], isError: true };
+          // Execute action then wait for Electron to finish the transition before querying state
+          const expr = `(async () => {
+            window.electronAPI.${fn}();
+            await new Promise(r => setTimeout(r, 250));
+            const maximized = await window.electronAPI.getMaximizedState();
+            return JSON.stringify({ action: '${action}', maximized });
+          })()`;
+          const res = await cdpSend('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
+          if (res.exceptionDetails) throw new Error(res.exceptionDetails.exception?.description || res.exceptionDetails.text);
+          return { content: [{ type: 'text', text: res.result.value }] };
+        }
+
+        // ── settings-mgr skill (expanded) ─────────────────────────
+
+        case 'lemon_shortcuts': {
+          if (!ws || ws.readyState !== WebSocket.OPEN) await cdpConnect();
+          if (args.shortcuts) {
+            const shortcuts = JSON.stringify(args.shortcuts);
+            const expr = `
+              Promise.all([
+                import('./renderer/state.js'),
+                import('./renderer/settings-manager.js'),
+              ]).then(([st, sm]) => {
+                const current = st.state.globalSettings['customShortcuts'] || {};
+                const updated = Object.assign(current, ${shortcuts});
+                st.state.globalSettings['customShortcuts'] = updated;
+                st.state.currentShortcuts = Object.assign(st.state.currentShortcuts, ${shortcuts});
+                sm.saveGlobalSettings();
+                window.electronAPI.updateShortcuts(updated);
+                return 'Shortcuts updated: ' + JSON.stringify(updated, null, 2);
+              })`;
+            const res = await cdpSend('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
+            if (res.exceptionDetails) throw new Error(res.exceptionDetails.exception?.description || res.exceptionDetails.text);
+            return { content: [{ type: 'text', text: res.result.value }] };
+          }
+          // Read current shortcuts
+          const expr = `
+            Promise.all([
+              import('./renderer/state.js'),
+              import('./renderer/config.js'),
+            ]).then(([st, cfg]) => {
+              return JSON.stringify({
+                defaults: cfg.defaultShortcuts || {},
+                custom: st.state.globalSettings['customShortcuts'] || {},
+                active: st.state.currentShortcuts || {},
+              }, null, 2);
+            })`;
+          const res = await cdpSend('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
+          if (res.exceptionDetails) throw new Error(res.exceptionDetails.exception?.description || res.exceptionDetails.text);
+          return { content: [{ type: 'text', text: res.result.value }] };
+        }
+
+        case 'lemon_theme': {
+          if (!ws || ws.readyState !== WebSocket.OPEN) await cdpConnect();
+          const operations = [];
+
+          if (args.accentColor) {
+            const color = safeStr(args.accentColor);
+            operations.push(`st.state.globalSettings['accent-color'] = ${color};
+              document.documentElement.style.setProperty('--accent-color', ${color});`);
+          }
+          if (args.liquidGlass != null) {
+            const lg = Boolean(args.liquidGlass);
+            operations.push(`st.state.globalSettings['liquid-glass-toggle'] = ${lg};
+              document.body.classList.toggle('liquid-glass', ${lg});`);
+          }
+          if (args.reduceMotion != null) {
+            const rm = Boolean(args.reduceMotion);
+            operations.push(`st.state.globalSettings['reduce-motion-toggle'] = ${rm};
+              document.body.classList.toggle('reduce-motion', ${rm});`);
+          }
+
+          if (operations.length === 0) {
+            return { content: [{ type: 'text', text: 'No theme changes specified. Use accentColor, liquidGlass, or reduceMotion.' }], isError: true };
+          }
+
+          const expr = `
+            Promise.all([
+              import('./renderer/state.js'),
+              import('./renderer/settings-manager.js'),
+            ]).then(([st, sm]) => {
+              ${operations.join('\n')}
+              sm.saveGlobalSettings();
+              return 'Theme updated';
+            })`;
+          const res = await cdpSend('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
+          if (res.exceptionDetails) throw new Error(res.exceptionDetails.exception?.description || res.exceptionDetails.text);
+          return { content: [{ type: 'text', text: res.result.value }] };
+        }
+
+        // ── history-mgr (extended) ────────────────────────────────
+
+        case 'lemon_history_search': {
+          if (!ws || ws.readyState !== WebSocket.OPEN) await cdpConnect();
+          const query = safeStr(args.query);
+          const limit = Number(args.limit) || 20;
+          const expr = `window.electronAPI.historySearch(${query}, ${limit}).then(r => JSON.stringify(r))`;
+          const res = await cdpSend('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
+          if (res.exceptionDetails) throw new Error(res.exceptionDetails.exception?.description || res.exceptionDetails.text);
+          return { content: [{ type: 'text', text: res.result.value }] };
+        }
+
+        case 'lemon_history_clear': {
+          if (!ws || ws.readyState !== WebSocket.OPEN) await cdpConnect();
+          const expr = `window.electronAPI.historyClear().then(() => 'History cleared')`;
+          const res = await cdpSend('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
+          if (res.exceptionDetails) throw new Error(res.exceptionDetails.exception?.description || res.exceptionDetails.text);
+          return { content: [{ type: 'text', text: res.result.value }] };
+        }
+
+        // ── constitution-mgr (extended) ───────────────────────────
+
+        case 'lemon_constitution_health': {
+          if (!ws || ws.readyState !== WebSocket.OPEN) await cdpConnect();
+          const expr = `window.electronAPI.constitutionGetHealth().then(r => JSON.stringify(r, null, 2))`;
+          const res = await cdpSend('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
+          if (res.exceptionDetails) throw new Error(res.exceptionDetails.exception?.description || res.exceptionDetails.text);
+          return { content: [{ type: 'text', text: res.result.value }] };
+        }
+
+        case 'lemon_constitution_soul': {
+          if (!ws || ws.readyState !== WebSocket.OPEN) await cdpConnect();
+          const expr = `window.electronAPI.constitutionGetSoul().then(r => JSON.stringify(r, null, 2))`;
+          const res = await cdpSend('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
+          if (res.exceptionDetails) throw new Error(res.exceptionDetails.exception?.description || res.exceptionDetails.text);
+          return { content: [{ type: 'text', text: res.result.value }] };
+        }
+
+        case 'lemon_constitution_heartbeat': {
+          if (!ws || ws.readyState !== WebSocket.OPEN) await cdpConnect();
+          const expr = `window.electronAPI.constitutionGetHeartbeat().then(r => JSON.stringify(r, null, 2))`;
+          const res = await cdpSend('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
+          if (res.exceptionDetails) throw new Error(res.exceptionDetails.exception?.description || res.exceptionDetails.text);
+          return { content: [{ type: 'text', text: res.result.value }] };
+        }
+
+        // ── corax-mgr ────────────────────────────────────────────
+
+        case 'lemon_corax_skills': {
+          if (!ws || ws.readyState !== WebSocket.OPEN) await cdpConnect();
+          const expr = `window.electronAPI.coraxGetSkills().then(r => JSON.stringify(r, null, 2))`;
+          const res = await cdpSend('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
+          if (res.exceptionDetails) throw new Error(res.exceptionDetails.exception?.description || res.exceptionDetails.text);
+          return { content: [{ type: 'text', text: res.result.value }] };
+        }
+
+        case 'lemon_corax_execute': {
+          if (!ws || ws.readyState !== WebSocket.OPEN) await cdpConnect();
+          const command = safeStr(args.command);
+          const expr = `window.electronAPI.coraxExecute(${command}).then(r => JSON.stringify(r, null, 2))`;
+          const res = await cdpSend('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
+          if (res.exceptionDetails) throw new Error(res.exceptionDetails.exception?.description || res.exceptionDetails.text);
+          return { content: [{ type: 'text', text: res.result.value }] };
         }
 
         default:

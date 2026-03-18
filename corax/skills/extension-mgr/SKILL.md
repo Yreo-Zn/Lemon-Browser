@@ -104,6 +104,16 @@ La sección de extensiones tiene:
 3. **Lista de extensiones** — Cards con nombre, versión, botones Configurar/Eliminar
 4. Iconos via `<ion-icon>` (cloud-upload-outline, settings-outline, trash-outline)
 
+## MCP Tools (browser-tools server)
+
+| Tool | Descripción |
+|------|-------------|
+| `lemon_install_extension` | Instalar extensión desde CRX URL o Chrome/Edge/Opera store |
+| `lemon_list_extensions` | Listar extensiones instaladas |
+| `lemon_remove_extension` | Eliminar extensión por ID |
+| `lemon_extension_options` | Abrir página de opciones de una extensión |
+| `lemon_adblock` | Activar/desactivar adblock (uBlock Origin) |
+
 ## Restricciones de seguridad
 
 - Las extensiones se ejecutan en el sandbox de Electron (session.defaultSession)

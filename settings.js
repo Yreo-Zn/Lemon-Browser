@@ -68,6 +68,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         'adblock-toggle': (checked) => {
             window.electronAPI.sendToHost('adblock-changed', checked);
         },
+        'blank-page-toggle': (checked) => {
+            window.electronAPI.sendToHost('blank-page-changed', checked);
+        },
+        'dnt-toggle': (checked) => {
+            window.electronAPI.sendToHost('dnt-changed', checked);
+        },
         'reduce-motion-toggle': animationHandler,
         'no-animations-toggle': animationHandler
     };
@@ -114,6 +120,31 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (dataFolderBtn) {
         dataFolderBtn.addEventListener('click', () => {
             window.electronAPI.openDataFolder();
+        });
+    }
+
+    // ========================================================================
+    // BORRAR DATOS DE NAVEGACIÓN
+    // ========================================================================
+
+    const clearDataBtn = document.getElementById('clear-data-btn');
+    if (clearDataBtn) {
+        clearDataBtn.addEventListener('click', async () => {
+            if (confirm('¿Estás seguro de que deseas borrar todos los datos de navegación?')) {
+                clearDataBtn.disabled = true;
+                clearDataBtn.textContent = 'Borrando…';
+                try {
+                    await window.electronAPI.clearBrowsingData();
+                    clearDataBtn.textContent = '¡Datos borrados!';
+                    setTimeout(() => {
+                        clearDataBtn.textContent = 'Borrar datos ahora';
+                        clearDataBtn.disabled = false;
+                    }, 2000);
+                } catch (err) {
+                    clearDataBtn.textContent = 'Error al borrar';
+                    clearDataBtn.disabled = false;
+                }
+            }
         });
     }
 
@@ -292,6 +323,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const dropZone = document.getElementById('drop-zone');
     const extensionsList = document.getElementById('extensions-list');
     const openWebStoreBtn = document.getElementById('open-webstore-btn');
+    const openEdgeStoreBtn = document.getElementById('open-edge-store-btn');
+    const openOperaStoreBtn = document.getElementById('open-opera-store-btn');
 
     if (dropZone && extensionsList) {
         // Cargar extensiones al iniciar
@@ -301,6 +334,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (openWebStoreBtn) {
             openWebStoreBtn.addEventListener('click', () => {
                 window.electronAPI.sendToHost('open-url', 'https://chromewebstore.google.com/');
+            });
+        }
+
+        // Botón para abrir Edge Add-ons
+        if (openEdgeStoreBtn) {
+            openEdgeStoreBtn.addEventListener('click', () => {
+                window.electronAPI.sendToHost('open-url', 'https://microsoftedge.microsoft.com/addons/Microsoft-Edge-Extensions-Home');
+            });
+        }
+
+        // Botón para abrir Opera Addons
+        if (openOperaStoreBtn) {
+            openOperaStoreBtn.addEventListener('click', () => {
+                window.electronAPI.sendToHost('open-url', 'https://addons.opera.com/extensions/');
             });
         }
 
@@ -351,6 +398,31 @@ document.addEventListener('DOMContentLoaded', async () => {
                 alert(`Error inesperado: ${err.message}`);
             } finally {
                 // Restaurar texto
+                dropZone.innerHTML = `
+                    <ion-icon name="cloud-upload-outline"></ion-icon>
+                    <p>Suelta archivos de extensión aquí</p>
+                `;
+            }
+        });
+
+        // Escuchar evento de instalación desde Opera Addons
+        window.electronAPI.onTriggerOperaExtensionInstall(async (extensionSlug) => {
+            const confirmInstall = confirm('¿Quieres instalar esta extensión desde Opera Addons?');
+            if (!confirmInstall) return;
+
+            dropZone.innerHTML = `<p>Descargando e instalando extensión de Opera (${extensionSlug})...</p>`;
+
+            try {
+                const result = await window.electronAPI.downloadAndInstallOperaCrx(extensionSlug);
+                if (result.success) {
+                    alert(`Extensión de Opera "${result.name}" instalada correctamente.`);
+                    loadExtensions();
+                } else {
+                    alert(`Error al instalar: ${result.error}`);
+                }
+            } catch (err) {
+                alert(`Error inesperado: ${err.message}`);
+            } finally {
                 dropZone.innerHTML = `
                     <ion-icon name="cloud-upload-outline"></ion-icon>
                     <p>Suelta archivos de extensión aquí</p>

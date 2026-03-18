@@ -9,6 +9,7 @@ import { setInteractive, updateControlsMode, resetSearchIdleTimer } from './ghos
 import { saveGlobalSettings, getScrollbarCSS } from './settings-manager.js';
 import { hidePreview } from './search.js';
 import { showNavBar, hideNavBar, attachNavListeners, updateNavBar } from './nav-bar.js';
+import { recordNavigation } from './history.js';
 
 // ── Closed tabs stack (for Ctrl+Shift+T) ────────────────────────
 
@@ -46,7 +47,7 @@ export function saveOpenPagesState() {
   }
 
   const pagesToSave = state.openPages.map(page => ({
-    url: page.webview.getURL(),
+    url: page.webview ? page.webview.getURL() : page.url,
     name: page.name || page.url,
     favicon: page.favicon
   }));
@@ -250,7 +251,7 @@ export function closePageAtIndex(index) {
     }
   } catch (_) {}
 
-  pageToClose.webview.remove();
+  if (pageToClose.webview) pageToClose.webview.remove();
   pageToClose.dot.remove();
   state.openPages.splice(index, 1);
 
@@ -342,6 +343,12 @@ function wakeUpPage(page) {
   webview.addEventListener('page-title-updated', (e) => {
     page.name = e.title;
     saveOpenPagesState();
+    saveRecentSite({
+      name: e.title,
+      url: webview.getURL(),
+      icon: page.favicon || 'https://www.google.com/favicon.ico'
+    });
+    recordNavigation(webview.getURL(), e.title);
   });
 
   webview.addEventListener('did-navigate', () => saveOpenPagesState());
@@ -515,6 +522,8 @@ export function navigateTo(url) {
       url: webview.getURL(),
       icon: pageObj.favicon || 'https://www.google.com/favicon.ico'
     });
+    // Record to browsing history
+    recordNavigation(webview.getURL(), e.title);
   });
 
   webview.addEventListener('did-navigate', () => saveOpenPagesState());

@@ -108,15 +108,24 @@ function setupWebContentsHandlers() {
             showExtensionInstallMenu(idMatch[1], 'Edge', 'trigger-edge-extension-install');
           }
         }
+
+        // Opera Addons
+        if (pageURL.includes('addons.opera.com')) {
+          const slugMatch = pageURL.match(/\/details\/([^/?#]+)/);
+          if (slugMatch && slugMatch[1]) {
+            showExtensionInstallMenu(slugMatch[1], 'Opera', 'trigger-opera-extension-install');
+          }
+        }
       });
     }
   });
 }
 
 function showExtensionInstallMenu(extensionId, source, ipcChannel) {
+  const sourceLabel = source === 'Chrome' ? '' : ` de ${source}`;
   const menu = new Menu();
   menu.append(new MenuItem({
-    label: `Instalar extensión${source === 'Edge' ? ' de Edge' : ''} en Lemon Browser`,
+    label: `Instalar extensión${sourceLabel} en Lemon Browser`,
     icon: path.join(__dirname, '..', 'Icon.png'),
     click: () => {
       const windows = BrowserWindow.getAllWindows();

@@ -95,6 +95,13 @@ Ventana visible, interactiva
 - **Tabs:** Crear/cerrar pestañas actualiza el modo (home vs browser)
 - **Search:** El idle timer es parte del flujo ghost
 
+## MCP Tools (browser-tools server)
+
+| Tool | Descripción |
+|------|-------------|
+| `lemon_ghost_mode` | Activar/desactivar ghost mode |
+| `lemon_window` | Minimizar, maximizar, restaurar, o consultar estado de ventana |
+
 ## Restricciones
 
 - `setIgnoreMouseEvents` es una API de Electron a nivel de ventana — afecta toda la ventana

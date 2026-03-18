@@ -7,7 +7,7 @@
  * - Jumplist de Windows
  */
 
-const { BrowserWindow, ipcMain, shell, screen } = require('electron');
+const { BrowserWindow, ipcMain, shell, screen, session } = require('electron');
 const path = require('path');
 const { pathToFileURL } = require('url');
 const fs = require('fs');
@@ -19,6 +19,13 @@ const log = createLogger('window');
 
 let currentShortcuts = { ...DEFAULT_SHORTCUTS };
 let dispatchTable = {};
+
+// Workaround: transparent + frameless on Windows breaks isMaximized()/unmaximize().
+// Track state manually via WeakMaps.
+const maximizedMap = new WeakMap();
+const boundsMap = new WeakMap();
+
+
 
 // ── Funciones auxiliares de ventana ─────────────────────────────
 
@@ -337,12 +344,19 @@ function registerWindowHandlers() {
 
   ipcMain.on('window-maximize', (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
-    if (win) {
-      if (win.isMaximized()) {
-        win.unmaximize();
-      } else {
-        win.maximize();
-      }
+    if (!win) return;
+    if (maximizedMap.get(win)) {
+      const saved = boundsMap.get(win);
+      if (saved) win.setBounds(saved);
+      else win.unmaximize();
+      maximizedMap.set(win, false);
+      win.webContents.send('window-maximized-state', false);
+      win.webContents.send('window-restored');
+    } else {
+      boundsMap.set(win, win.getBounds());
+      win.maximize();
+      maximizedMap.set(win, true);
+      win.webContents.send('window-maximized-state', true);
     }
   });
 
@@ -381,7 +395,7 @@ function registerWindowHandlers() {
   ipcMain.on('window-resize-start', (event, data) => {
     if (!data || typeof data.edge !== 'string' || typeof data.screenX !== 'number' || typeof data.screenY !== 'number') return;
     const win = BrowserWindow.fromWebContents(event.sender);
-    if (!win || win.isMaximized()) return;
+    if (!win || maximizedMap.get(win)) return;
     resizeState = {
       edge: data.edge,
       startScreenX: data.screenX,
@@ -451,11 +465,19 @@ function registerWindowHandlers() {
 
   ipcMain.handle('get-maximized-state', (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
-    return win ? win.isMaximized() : false;
+    return win ? (maximizedMap.get(win) || false) : false;
   });
 
   ipcMain.handle('get-settings-url', () => {
     return pathToFileURL(path.join(__dirname, '..', 'settings.html')).href;
+  });
+
+  ipcMain.handle('clear-browsing-data', async () => {
+    const ses = session.defaultSession;
+    await ses.clearStorageData();
+    await ses.clearCache();
+    log.info('Browsing data cleared');
+    return { success: true };
   });
 }
 
@@ -468,13 +490,10 @@ function createWindow() {
   const win = new BrowserWindow({
     width,
     height,
-    x: 0,
-    y: 0,
     transparent: true,
-    backgroundColor: '#00000000',
-    hasShadow: false,
     frame: false,
-    thickFrame: false,
+    thickFrame: true,
+    hasShadow: false,
     resizable: true,
     minimizable: true,
     maximizable: true,
@@ -504,18 +523,52 @@ function createWindow() {
     webContents.on('before-input-event', inputHandler);
   });
 
-  // Estado de maximización
-  win.on('maximize', () => win.webContents.send('window-maximized-state', true));
+  // Notify renderer of maximize/unmaximize state changes (+ WeakMap tracking)
+  win.on('maximize', () => {
+    // Save pre-maximize bounds if not already tracked (covers native OS maximize via dblclick/snap)
+    if (!maximizedMap.get(win)) {
+      const current = boundsMap.get(win);
+      if (!current) boundsMap.set(win, win.getBounds());
+    }
+    maximizedMap.set(win, true);
+    win.webContents.send('window-maximized-state', true);
+  });
   win.on('unmaximize', () => {
+    maximizedMap.set(win, false);
     win.webContents.send('window-maximized-state', false);
     win.webContents.send('window-restored');
+  });
+
+  // Notify renderer of fullscreen state changes
+  win.on('enter-full-screen', () => {
+    win.webContents.send('window-fullscreen-state', true);
+  });
+  win.on('leave-full-screen', () => {
+    win.webContents.send('window-fullscreen-state', false);
+  });
+
+  // Keep boundsMap updated when the user moves/resizes the restored window
+  // so that unmaximize always restores to the latest position.
+  // Also notify renderer of state changes for Aero Snap scenarios.
+  win.on('moved', () => {
+    if (!maximizedMap.get(win)) boundsMap.set(win, win.getBounds());
+  });
+  win.on('resized', () => {
+    if (!maximizedMap.get(win)) {
+      boundsMap.set(win, win.getBounds());
+      // Renderer may need to know the window is no longer maximized (e.g. after Aero Snap)
+      win.webContents.send('window-maximized-state', false);
+    }
   });
 
   // Cargar UI
   win.loadFile(path.join(__dirname, '..', 'index.html'));
 
   win.once('ready-to-show', () => {
-    setTimeout(() => win.show(), 100);
+    boundsMap.set(win, { x: Math.round((width - DEFAULT_WIDTH) / 2), y: Math.round((height - DEFAULT_HEIGHT) / 2), width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT });
+    win.maximize();
+    maximizedMap.set(win, true);
+    win.show();
   });
 
   // Solicitar estado de adblock al renderer

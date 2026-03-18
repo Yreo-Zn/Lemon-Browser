@@ -87,6 +87,50 @@ const IPC_WHITELIST = {
     },
     requiredRole: 'system-admin',
     description: 'Run integrity verification'
+  },
+
+  // Browsing history
+  'history-add': {
+    schema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string' },
+        title: { type: 'string' }
+      },
+      required: ['url']
+    },
+    requiredRole: 'any',
+    description: 'Add entry to browsing history'
+  },
+  'history-search': {
+    schema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string' },
+        limit: { type: 'number' }
+      }
+    },
+    requiredRole: 'any',
+    description: 'Search browsing history'
+  },
+  'history-clear': {
+    schema: { type: 'object' },
+    requiredRole: 'any',
+    description: 'Clear browsing history'
+  },
+
+  // Constitutional violation notifications (main→renderer push)
+  'constitution-violation': {
+    schema: {
+      type: 'object',
+      properties: {
+        severity: { enum: ['INFO', 'WARNING', 'CRITICAL'] },
+        message: { type: 'string' },
+        petrea: { type: 'string' }
+      }
+    },
+    requiredRole: 'system-admin',
+    description: 'Push constitutional violation to renderer'
   }
 };
 

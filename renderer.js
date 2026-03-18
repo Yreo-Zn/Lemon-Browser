@@ -7,7 +7,6 @@
 import { initDOM } from './renderer/state.js';
 import { initSettings } from './renderer/settings-manager.js';
 import { setupGhostMode } from './renderer/ghost-mode.js';
-import { setupResize } from './renderer/resize.js';
 import { setupNavBar } from './renderer/nav-bar.js';
 import { setupSearch, updateEngineUI } from './renderer/search.js';
 import {
@@ -19,6 +18,9 @@ import {
   setupCloseTabButton, setupSettingsButton, setupIPCListeners
 } from './renderer/ui.js';
 import { setupCoraxPanel } from './renderer/corax-panel.js';
+import { setupNotifications } from './renderer/notifications.js';
+import { setupHistory } from './renderer/history.js';
+import { setupResize } from './renderer/resize.js';
 
 // ── Inicialización ──────────────────────────────────────────────
 
@@ -36,6 +38,8 @@ setupBookmarksTrigger();
 setupHibernation();
 setupIPCListeners();
 setupCoraxPanel();
+setupNotifications();
+setupHistory();
 
 // Cargar settings (async) → aplica tema, color, atajos
 await initSettings();

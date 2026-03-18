@@ -41,6 +41,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // ── Adblock ───────────────────────────────────────────────────
   setAdblockEnabled: (enabled) => ipcRenderer.send('set-adblock-enabled', enabled),
 
+  // ── Extensions (MCP bridge) ───────────────────────────────────
+  getExtensionsList: () => ipcRenderer.invoke('get-extensions-list'),
+  removeExtension: (extensionId) => ipcRenderer.invoke('remove-extension', extensionId),
+  openExtensionOptions: (extensionId) => ipcRenderer.send('open-extension-options', extensionId),
+
   // ── Data Folder ───────────────────────────────────────────────
   openDataFolder: () => ipcRenderer.send('open-data-folder'),
 
@@ -54,6 +59,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('window-maximized-state', (_e, isMaximized) => callback(isMaximized)),
   onWindowRestored: (callback) =>
     ipcRenderer.on('window-restored', () => callback()),
+  onWindowFullscreenState: (callback) =>
+    ipcRenderer.on('window-fullscreen-state', (_e, isFullscreen) => callback(isFullscreen)),
   onBrowserGoBack: (callback) =>
     ipcRenderer.on('browser-go-back', () => callback()),
   onBrowserGoForward: (callback) =>
@@ -72,6 +79,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('trigger-extension-install', (_e, extensionId) => callback(extensionId)),
   onTriggerEdgeExtensionInstall: (callback) =>
     ipcRenderer.on('trigger-edge-extension-install', (_e, extensionId) => callback(extensionId)),
+  onTriggerOperaExtensionInstall: (callback) =>
+    ipcRenderer.on('trigger-opera-extension-install', (_e, extensionSlug) => callback(extensionSlug)),
   onOpenSettingsRequested: (callback) =>
     ipcRenderer.on('open-settings-requested', () => callback()),
 
@@ -119,9 +128,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
   coraxExecute: (command) => ipcRenderer.invoke('corax-execute', command),
   onCoraxAction: (callback) =>
     ipcRenderer.on('corax-action', (_e, action, ...args) => callback(action, ...args)),
+  onConstitutionViolation: (callback) =>
+    ipcRenderer.on('constitution-violation', (_e, violation) => callback(violation)),
   // ── Constitution ───────────────────────────────────────────────────
   constitutionGetHealth: () => ipcRenderer.invoke('constitution-get-health'),
   constitutionGetSoul: () => ipcRenderer.invoke('constitution-get-soul'),
   constitutionGetHeartbeat: () => ipcRenderer.invoke('constitution-get-heartbeat'),
   constitutionGetAudit: (count) => ipcRenderer.invoke('constitution-get-audit', count),
+
+  // ── History ────────────────────────────────────────────────────────
+  historyAdd: (entry) => ipcRenderer.invoke('history-add', entry),
+  historySearch: (query, limit) => ipcRenderer.invoke('history-search', query, limit),
+  historyClear: () => ipcRenderer.invoke('history-clear'),
 });

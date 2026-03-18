@@ -295,7 +295,104 @@ function registerCoraxHandlers() {
     return executeSkill(event, command);
   });
 
+  // ── History: persistent browsing history ───────────────────────
+
+  const HISTORY_FILE = path.join(require('./config').DATA_DIR, 'history.json');
+
+  function readHistory() {
+    try {
+      if (fs.existsSync(HISTORY_FILE)) return JSON.parse(fs.readFileSync(HISTORY_FILE, 'utf8'));
+    } catch { /* corrupt file */ }
+    return [];
+  }
+
+  function writeHistory(entries) {
+    const dir = path.dirname(HISTORY_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(HISTORY_FILE, JSON.stringify(entries));
+  }
+
+  let historySaveTimer = null;
+  let historyCache = null;
+
+  ipcMain.handle('history-add', (_event, entry) => {
+    if (!historyCache) historyCache = readHistory();
+    historyCache.push({
+      url: String(entry.url || ''),
+      title: String(entry.title || ''),
+      timestamp: Date.now(),
+    });
+    // Cap at 10000 entries
+    if (historyCache.length > 10000) historyCache = historyCache.slice(-10000);
+    // Debounced write
+    clearTimeout(historySaveTimer);
+    historySaveTimer = setTimeout(() => writeHistory(historyCache), 2000);
+    return true;
+  });
+
+  ipcMain.handle('history-search', (_event, query, limit = 50) => {
+    if (!historyCache) historyCache = readHistory();
+    if (!query || !query.trim()) return historyCache.slice(-limit).reverse();
+    const q = query.toLowerCase();
+    return historyCache
+      .filter(e => e.url.toLowerCase().includes(q) || e.title.toLowerCase().includes(q))
+      .slice(-limit)
+      .reverse();
+  });
+
+  ipcMain.handle('history-clear', () => {
+    historyCache = [];
+    writeHistory([]);
+    return true;
+  });
+
+  // ── Constitution violation monitoring ──────────────────────────
+
+  startViolationMonitor();
+
   log.info('CoRax bridge registrado');
+}
+
+// ── Violation Monitor ───────────────────────────────────────────
+
+let violationPollTimer = null;
+let lastViolationCheck = 0;
+
+function startViolationMonitor() {
+  // Poll the audit trail for violation-severity events every 10s
+  violationPollTimer = setInterval(async () => {
+    try {
+      const fw = getFramework();
+      if (!fw || !fw.isInitialized) return;
+
+      const audit = fw.getPetrea('auditTrail');
+      const all = await audit.query({});
+      const newEntries = all.filter(e =>
+        e.timestamp > lastViolationCheck &&
+        (e.severity === 'WARNING' || e.severity === 'CRITICAL' ||
+         e.event?.includes('blocked') || e.event?.includes('failed') ||
+         e.event?.includes('violation') || e.event?.includes('tampered'))
+      );
+
+      if (newEntries.length > 0) {
+        lastViolationCheck = Math.max(...newEntries.map(e => e.timestamp || 0));
+        const win = BrowserWindow.getAllWindows()[0];
+        if (win && !win.isDestroyed()) {
+          for (const entry of newEntries) {
+            win.webContents.send('constitution-violation', {
+              event: entry.event || 'violation',
+              severity: entry.severity || 'WARNING',
+              message: entry.reason || entry.error || entry.event || 'Violation detected',
+              timestamp: entry.timestamp,
+              petrea: entry.petrea || entry.source || '',
+            });
+          }
+        }
+      }
+    } catch { /* monitoring is non-blocking */ }
+  }, 10000);
+
+  lastViolationCheck = Date.now();
 }
 
 module.exports = { registerCoraxHandlers };

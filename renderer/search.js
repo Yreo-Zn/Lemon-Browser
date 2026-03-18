@@ -214,10 +214,16 @@ export function setupSearch() {
       if (state.selectedIndex >= 0 && items[state.selectedIndex]) {
         navigateTo(items[state.selectedIndex].dataset.url);
       } else {
-        const val = dom.searchBar.value;
+        const val = dom.searchBar.value.trim();
         if (val) {
-          const engine = searchEngines[state.currentEngine];
-          navigateTo(`${engine.url}${encodeURIComponent(val)}`);
+          // Direct URL detection — navigate instead of searching
+          if (/^https?:\/\//i.test(val) || /^[\w][\w.-]+\.[a-z]{2,}(\/|$)/i.test(val)) {
+            const url = val.startsWith('http') ? val : `https://${val}`;
+            navigateTo(url);
+          } else {
+            const engine = searchEngines[state.currentEngine];
+            navigateTo(`${engine.url}${encodeURIComponent(val)}`);
+          }
         }
       }
     }

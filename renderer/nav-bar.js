@@ -8,6 +8,7 @@
 
 import { state, dom } from './state.js';
 import { setInteractive } from './ghost-mode.js';
+import { toggleHistory } from './history.js';
 
 // ── Internal DOM refs ───────────────────────────────────────────
 
@@ -62,8 +63,8 @@ export function setupNavBar() {
     document.getElementById('corax-toggle-btn')?.click();
   });
 
-  // Drag fusion — synapse bar is the window handle
-  initSynapseDrag();
+  // Double-click maximize/restore is handled natively by -webkit-app-region: drag on #synapse-bar.
+  // No JS dblclick handler needed — it would double-toggle and cancel itself.
 
   // Ambient particle system
   initParticles();
@@ -81,69 +82,11 @@ export function setupNavBar() {
         closeCommandSurface();
       }
     }
-  });
-}
-
-// ── Drag Fusion — synapse bar as window handle ─────────────────
-
-const drag = { ready: false, active: false, startX: 0, startY: 0, pointerId: null };
-const DRAG_THRESHOLD = 5;
-
-function initSynapseDrag() {
-  if (!synapseBar) return;
-
-  synapseBar.addEventListener('pointerdown', (e) => {
-    if (e.target.closest('.synapse-nav, #synapse-corax')) return;
-    if (e.button !== 0) return;
-    drag.ready = true;
-    drag.active = false;
-    drag.startX = e.clientX;
-    drag.startY = e.clientY;
-    drag.pointerId = e.pointerId;
-  });
-
-  synapseBar.addEventListener('pointermove', (e) => {
-    if (!drag.ready && !drag.active) return;
-    if (drag.ready && !drag.active) {
-      const dx = Math.abs(e.clientX - drag.startX);
-      const dy = Math.abs(e.clientY - drag.startY);
-      if (dx + dy > DRAG_THRESHOLD) {
-        drag.active = true;
-        drag.ready = false;
-        synapseBar.setPointerCapture(drag.pointerId);
-        window.electronAPI.windowDragStart({ mouseX: drag.startX, mouseY: drag.startY });
-        synapseBar.classList.add('dragging');
-        setInteractive(true);
-      }
+    // Ctrl+H → Toggle History
+    if ((e.ctrlKey || e.metaKey) && e.key === 'h') {
+      e.preventDefault();
+      toggleHistory();
     }
-    if (drag.active) {
-      window.electronAPI.windowDragMove({ screenX: e.screenX, screenY: e.screenY });
-    }
-  });
-
-  synapseBar.addEventListener('pointerup', (e) => {
-    if (drag.active) {
-      drag.active = false;
-      try { synapseBar.releasePointerCapture(e.pointerId); } catch (_) {}
-      window.electronAPI.windowDragEnd();
-      synapseBar.classList.remove('dragging');
-    }
-    drag.ready = false;
-  });
-
-  synapseBar.addEventListener('lostpointercapture', () => {
-    if (drag.active) {
-      drag.active = false;
-      window.electronAPI.windowDragEnd();
-      synapseBar.classList.remove('dragging');
-    }
-    drag.ready = false;
-  });
-
-  // Double-click on bar padding → maximize/restore
-  synapseBar.addEventListener('dblclick', (e) => {
-    if (e.target.closest('.synapse-nav, #synapse-corax, #synapse-center, #synapse-status')) return;
-    window.electronAPI.windowMaximize();
   });
 }
 

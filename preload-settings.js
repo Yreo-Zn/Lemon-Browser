@@ -21,6 +21,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   installExtension: (filePath) => ipcRenderer.invoke('install-extension', filePath),
   downloadAndInstallCrx: (extensionId) => ipcRenderer.invoke('download-and-install-crx', extensionId),
   downloadAndInstallEdgeCrx: (extensionId) => ipcRenderer.invoke('download-and-install-edge-crx', extensionId),
+  downloadAndInstallOperaCrx: (extensionSlug) => ipcRenderer.invoke('download-and-install-opera-crx', extensionSlug),
   getExtensionsList: () => ipcRenderer.invoke('get-extensions-list'),
   removeExtension: (extensionId) => ipcRenderer.invoke('remove-extension', extensionId),
   openExtensionOptions: (extensionId) => ipcRenderer.send('open-extension-options', extensionId),
@@ -37,15 +38,22 @@ contextBridge.exposeInMainWorld('electronAPI', {
       'adblock-changed',
       'animation-settings-changed',
       'open-url',
+      'blank-page-changed',
+      'dnt-changed',
     ];
     if (allowedChannels.includes(channel)) {
       ipcRenderer.sendToHost(channel, ...args);
     }
   },
 
+  // ── Clear Browsing Data ───────────────────────────────────────
+  clearBrowsingData: () => ipcRenderer.invoke('clear-browsing-data'),
+
   // ── Events from Host (renderer sends to settings webview) ─────
   onTriggerExtensionInstall: (callback) =>
     ipcRenderer.on('trigger-extension-install', (_e, extensionId) => callback(extensionId)),
   onTriggerEdgeExtensionInstall: (callback) =>
     ipcRenderer.on('trigger-edge-extension-install', (_e, extensionId) => callback(extensionId)),
+  onTriggerOperaExtensionInstall: (callback) =>
+    ipcRenderer.on('trigger-opera-extension-install', (_e, extensionSlug) => callback(extensionSlug)),
 });

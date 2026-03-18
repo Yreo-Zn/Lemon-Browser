@@ -98,6 +98,24 @@ La navegación se maneja desde `renderer/ui.js`:
 - Search bar con motores: Google, DuckDuckGo, Bing, etc.
 - Shortcuts de teclado configurables (Ctrl+Arrow para nav, Alt+Arrow para tabs)
 
+## MCP Tools (browser-tools server)
+
+| Tool | Descripción |
+|------|-------------|
+| `lemon_navigate` | Navegar a URL en pestaña activa |
+| `lemon_new_tab` | Crear nueva pestaña con URL |
+| `lemon_close_tab` | Cerrar pestaña por índice |
+| `lemon_list_tabs` | Listar pestañas abiertas |
+| `lemon_switch_tab` | Activar pestaña por índice |
+| `lemon_back` | Navegar atrás |
+| `lemon_forward` | Navegar adelante |
+| `lemon_reload` | Recargar (opción hard reload) |
+| `lemon_go_home` | Volver a pantalla home |
+| `lemon_find` | Buscar texto en página (open/next/prev/close) |
+| `lemon_reopen_tab` | Reabrir última pestaña cerrada |
+| `lemon_page_info` | Info de la pestaña activa (URL, título, zoom, etc.) |
+| `lemon_zoom` | Zoom in/out/reset o nivel absoluto |
+
 ## Restricciones
 
 - Cada webview tiene user agent desktop (`DESKTOP_UA` de config.js)

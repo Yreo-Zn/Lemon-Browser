@@ -201,13 +201,61 @@ async function enableAdblocker() {
     return;
   }
 
+  // Try loading from local bundled path
+  const extensionPath = path.join(__dirname, '..', 'extensions', 'ublock');
+  if (fs.existsSync(extensionPath)) {
+    try {
+      const ext = await ses.extensions.loadExtension(extensionPath);
+      uBlockExtensionId = ext.id;
+      log.info('uBlock Origin habilitado (local)');
+      auditLog({ event: 'adblock_enabled', source: 'local' });
+      return;
+    } catch (error) {
+      log.warn('Error cargando uBlock local, intentando user-extensions', { message: error.message });
+    }
+  }
+
+  // Try loading from user extensions directory (previously downloaded)
+  const userUblockDir = path.join(USER_EXTENSIONS_DIR, 'cjpalhdlnbpafiamejdnhcphjbkeiagm');
+  if (fs.existsSync(userUblockDir)) {
+    try {
+      const ext = await ses.extensions.loadExtension(userUblockDir);
+      uBlockExtensionId = ext.id;
+      log.info('uBlock Origin habilitado (user-extensions)');
+      auditLog({ event: 'adblock_enabled', source: 'user-cache' });
+      return;
+    } catch (error) {
+      log.warn('Error cargando uBlock desde user-extensions', { message: error.message });
+    }
+  }
+
+  // Auto-download from Chrome Web Store (uBlock Origin ID)
+  log.info('uBlock Origin no encontrado localmente, descargando...');
   try {
-    const extensionPath = path.join(__dirname, '..', 'extensions', 'ublock');
-    const ext = await ses.extensions.loadExtension(extensionPath);
+    const UBLOCK_CRX_ID = 'cjpalhdlnbpafiamejdnhcphjbkeiagm';
+    const crxUrl = `https://clients2.google.com/service/update2/crx?response=redirect&prodversion=133.0.0.0&acceptformat=crx2,crx3&x=id%3D${UBLOCK_CRX_ID}%26uc`;
+    const { app } = require('electron');
+    const tempCrx = path.join(app.getPath('temp'), `${UBLOCK_CRX_ID}.crx`);
+    const tempZip = path.join(app.getPath('temp'), `${UBLOCK_CRX_ID}.zip`);
+
+    await downloadFile(crxUrl, tempCrx);
+    await convertCrxToZip(tempCrx, tempZip);
+
+    const destDir = path.join(USER_EXTENSIONS_DIR, UBLOCK_CRX_ID);
+    if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
+    await extract(tempZip, { dir: destDir });
+
+    const ext = await ses.extensions.loadExtension(destDir);
     uBlockExtensionId = ext.id;
-    log.info('uBlock Origin habilitado');
+    log.info('uBlock Origin descargado e instalado automáticamente');
+    auditLog({ event: 'adblock_enabled', source: 'auto-download', id: ext.id });
+
+    // Cleanup temp files
+    fs.unlink(tempCrx, () => {});
+    fs.unlink(tempZip, () => {});
   } catch (error) {
-    log.error('Error al habilitar uBlock Origin', { message: error.message });
+    log.error('Error descargando uBlock Origin automáticamente', { message: error.message });
+    auditLog({ event: 'adblock_auto_install_failed', error: error.message, severity: 'WARNING' });
   }
 }
 
@@ -231,9 +279,16 @@ function disableAdblocker() {
 async function loadStoredExtensions(initialSettings) {
   log.info('Cargando extensiones guardadas...');
 
-  if (initialSettings['adblock-toggle'] === true) {
+  // Auto-enable adblock on first launch (virgin install — setting not yet set)
+  const adblockEnabled = initialSettings['adblock-toggle'] !== false;
+  if (adblockEnabled) {
     await enableAdblocker();
   }
+
+  // Track already-loaded extension paths to avoid double-loading
+  const loadedPaths = new Set(
+    session.defaultSession.extensions.getAllExtensions().map(e => e.path)
+  );
 
   if (fs.existsSync(USER_EXTENSIONS_DIR)) {
     const folders = fs.readdirSync(USER_EXTENSIONS_DIR).filter(file =>
@@ -242,6 +297,7 @@ async function loadStoredExtensions(initialSettings) {
 
     for (const folder of folders) {
       const extPath = path.join(USER_EXTENSIONS_DIR, folder);
+      if (loadedPaths.has(extPath)) continue;
       try {
         const ext = await session.defaultSession.extensions.loadExtension(extPath);
         log.info(`Cargada extensión: ${ext.name} (${ext.id})`);
@@ -352,24 +408,69 @@ function registerExtensionHandlers(app) {
   ipcMain.on('open-extension-options', (_event, extensionId) => {
     const ext = session.defaultSession.extensions.getExtension(extensionId);
 
-    if (ext && (ext.manifest.options_page || (ext.manifest.options_ui && ext.manifest.options_ui.page))) {
-      const optionsPage = ext.manifest.options_page || ext.manifest.options_ui.page;
-      const optionsUrl = `chrome-extension://${extensionId}/${optionsPage}`;
+    if (!ext) {
+      log.warn('Extension not found for options', { extensionId });
+      return;
+    }
 
-      const optionsWin = new BrowserWindow({
-        width: 1000,
-        height: 800,
-        title: `Opciones - ${ext.name}`,
-        icon: path.join(__dirname, '..', 'Icon.png'),
-        webPreferences: {
-          nodeIntegration: false,
-          contextIsolation: true,
-          sandbox: true
-        }
-      });
+    const optionsPage = ext.manifest.options_page
+      || (ext.manifest.options_ui && ext.manifest.options_ui.page);
 
-      optionsWin.setMenu(null);
-      optionsWin.loadURL(optionsUrl);
+    if (!optionsPage) {
+      log.warn('Extension has no options page', { extensionId, name: ext.name });
+      return;
+    }
+
+    const optionsUrl = `chrome-extension://${extensionId}/${optionsPage}`;
+    log.info('Opening extension options', { extensionId, optionsUrl });
+
+    const parentWin = BrowserWindow.getAllWindows()[0];
+
+    const optionsWin = new BrowserWindow({
+      width: 1000,
+      height: 700,
+      title: `Opciones - ${ext.name}`,
+      icon: path.join(__dirname, '..', 'Icon.png'),
+      backgroundColor: '#1a1a2e',
+      parent: parentWin || undefined,
+      webPreferences: {
+        nodeIntegration: false,
+        contextIsolation: false,
+        sandbox: true,
+        session: session.defaultSession
+      }
+    });
+
+    optionsWin.setMenu(null);
+    optionsWin.loadURL(optionsUrl);
+
+    optionsWin.webContents.on('did-finish-load', () => {
+      log.info('Extension options page loaded', { url: optionsWin.webContents.getURL() });
+      optionsWin.focus();
+    });
+    optionsWin.webContents.on('did-fail-load', (_e, errorCode, errorDesc) => {
+      log.error('Extension options page failed to load', { errorCode, errorDesc });
+    });
+  });
+
+  // ── Opera Addons CRX Download & Install ────────────────────────
+  ipcMain.handle('download-and-install-opera-crx', async (_event, extensionSlug) => {
+    try {
+      log.info('Downloading Opera extension', { slug: extensionSlug });
+      const safeName = extensionSlug.replace(/[^a-zA-Z0-9_-]/g, '_');
+      const tempDir = path.join(app.getPath('temp'), 'lemon-opera-ext');
+      if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
+      const tempFile = path.join(tempDir, `${safeName}.nex`);
+
+      const downloadUrl = `https://addons.opera.com/extensions/download/${encodeURIComponent(extensionSlug)}/`;
+      await downloadFile(downloadUrl, tempFile);
+
+      const result = await installExtensionInternal(tempFile);
+      if (fs.existsSync(tempFile)) fs.unlinkSync(tempFile);
+      return result;
+    } catch (error) {
+      log.error('Opera extension install failed', { slug: extensionSlug, message: error.message });
+      return { success: false, error: `No se pudo instalar la extensión de Opera: ${error.message}` };
     }
   });
 }

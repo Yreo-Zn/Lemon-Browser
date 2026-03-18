@@ -115,6 +115,16 @@ window.electronAPI = {
 3. Si necesita comunicar al renderer: agregar canal al allowlist en `preload-settings.js` y handler en `channelHandlers` de `renderer/ui.js`
 4. Persistir via `globalSettings[key]` + `saveSettings()`
 
+## MCP Tools (browser-tools server)
+
+| Tool | Descripción |
+|------|-------------|
+| `lemon_set_search_engine` | Cambiar motor de búsqueda |
+| `lemon_get_settings` | Obtener configuración actual |
+| `lemon_set_setting` | Cambiar una configuración específica |
+| `lemon_shortcuts` | Leer o actualizar atajos de teclado |
+| `lemon_theme` | Cambiar color de acento, liquid glass, reduce motion |
+
 ## Restricciones
 
 - El webview de settings opera con `contextIsolation: true` siempre
