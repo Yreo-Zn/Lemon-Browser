@@ -734,7 +734,42 @@ if (minBtn) minBtn.onclick = () => ipcRenderer.send('window-minimize');
 if (maxBtn) maxBtn.onclick = () => ipcRenderer.send('window-maximize');
 if (closeBtn) closeBtn.onclick = () => ipcRenderer.send('window-close');
 
+// REDIMENSIONAMIENTO DESDE EL BORDE
+let isResizingWindow = false;
+
+const resizeHandles = document.querySelectorAll('.resize-handle');
+resizeHandles.forEach(handle => {
+    handle.addEventListener('mousedown', (e) => {
+        const classList = Array.from(handle.classList);
+        const edge = classList.find(c => c !== 'resize-handle');
+        if (edge) {
+            isResizingWindow = true;
+            ipcRenderer.send('window-resize-start', { mouseX: e.screenX, mouseY: e.screenY, edge });
+            setInteractive(true);
+            e.preventDefault(); // Evitar selección
+        }
+    });
+    
+    // Asegurar interactividad al pasar el ratón por el borde
+    handle.addEventListener('mouseenter', () => setInteractive(true));
+});
+
+document.addEventListener('mousemove', (e) => {
+    if (isResizingWindow) {
+        ipcRenderer.send('window-resize-move', { screenX: e.screenX, screenY: e.screenY });
+        setInteractive(true);
+    }
+});
+
+document.addEventListener('mouseup', () => {
+    if (isResizingWindow) {
+        isResizingWindow = false;
+        ipcRenderer.send('window-resize-end');
+    }
+});
+
 // Mantener interactivo si entramos en la preview
+
 if (previewContainer) {
     previewContainer.addEventListener('mouseenter', () => {
         setInteractive(true);

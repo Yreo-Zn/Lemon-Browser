@@ -1,0 +1,104 @@
+/* assistant.css */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: transparent !important;
+    overflow: hidden;
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    height: 100vh;
+    padding-bottom: 20px; /* Margen desde la barra de tareas */
+    -webkit-app-region: no-drag; /* Permite arrastrar desde la propia barra si quisieramos, pero en este caso no hace falta */
+}
+
+#assistant-container {
+    width: 100%;
+    max-width: 650px;
+    padding: 0 15px;
+}
+
+.assistant-bar {
+    background-color: rgba(26, 26, 28, 0.85);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    padding: 8px 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.05);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    height: 60px;
+}
+
+.assistant-bar:focus-within {
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), 0 0 0 2px rgba(255, 235, 100, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+    background-color: rgba(30, 30, 34, 0.95);
+}
+
+#assistant-logo {
+    width: 32px;
+    height: 32px;
+    margin-right: 15px;
+    border-radius: 50%;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+    -webkit-app-region: drag; /* Arrastrar desde el logo por si acaso */
+}
+
+#assistant-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    font-size: 16px;
+    font-family: 'Outfit', sans-serif;
+    outline: none;
+    padding: 5px;
+}
+
+#assistant-input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+button {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 18px;
+    cursor: pointer;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 5px;
+    transition: all 0.2s ease;
+}
+
+button:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+#send-button:hover {
+    background: rgba(255, 235, 100, 0.2);
+    color: #ffeb64;
+}
+
+/* Animaciones de entrada/salida */
+@keyframes slideUp {
+    from { transform: translateY(100px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.assistant-bar {
+    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

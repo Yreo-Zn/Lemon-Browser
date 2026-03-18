@@ -9,7 +9,8 @@
  * - Jumplist de Windows
  */
 
-const { app, BrowserWindow, ipcMain, session, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, session, shell, globalShortcut } = require('electron');
+const { exec } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const https = require('https'); // Necesario para descargar CRX
@@ -25,6 +26,12 @@ const DATA_DIR = path.join(app.getPath('documents'), 'Your_Lemon_Data');
 const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
 /** Directorio de extensiones de usuario */
 const USER_EXTENSIONS_DIR = path.join(DATA_DIR, 'extensions');
+/** Archivo donde se guarda el input del asistente */
+const ASSISTANT_INPUT_FILE = path.join(DATA_DIR, 'assistant_input.txt');
+
+/** Estado de la ventana del asistente */
+let assistantWindow = null;
+let isAssistantMode = process.argv.includes('--assistant');
 
 /**
  * Función para convertir un .crx en .zip eliminando la cabecera CRX
@@ -627,6 +634,63 @@ function createWindow() {
     }
   });
 
+  /** Redimensionar ventana (Manual por IPC para ventanas transparentes en Win) */
+  let isResizing = false;
+  let resizeEdge = null;
+  let resizeStartX = 0;
+  let resizeStartY = 0;
+  let resizeStartBounds = null;
+
+  ipcMain.on('window-resize-start', (event, { mouseX, mouseY, edge }) => {
+    isResizing = true;
+    resizeEdge = edge;
+    resizeStartX = mouseX;
+    resizeStartY = mouseY;
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win) resizeStartBounds = win.getBounds();
+  });
+
+  ipcMain.on('window-resize-move', (event, { screenX, screenY }) => {
+    if (!isResizing || !resizeStartBounds) return;
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (!win) return;
+
+    const dx = screenX - resizeStartX;
+    const dy = screenY - resizeStartY;
+
+    let { x, y, width, height } = resizeStartBounds;
+
+    if (resizeEdge.includes('right')) width += dx;
+    if (resizeEdge.includes('bottom')) height += dy;
+    if (resizeEdge.includes('left')) {
+      x += dx;
+      width -= dx;
+    }
+    if (resizeEdge.includes('top')) {
+      y += dy;
+      height -= dy;
+    }
+
+    const minW = 600;
+    const minH = 400;
+
+    if (width < minW) {
+      if (resizeEdge.includes('left')) x -= (minW - width);
+      width = minW;
+    }
+    if (height < minH) {
+      if (resizeEdge.includes('top')) y -= (minH - height);
+      height = minH;
+    }
+
+    win.setBounds({ x, y, width, height });
+  });
+
+  ipcMain.on('window-resize-end', () => {
+    isResizing = false;
+    resizeStartBounds = null;
+  });
+
   /** Cerrar ventana */
   ipcMain.on('window-close', (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
@@ -754,12 +818,124 @@ app.on('second-instance', (event, commandLine) => {
       win.webContents.send('browser-focus-search');
     } else if (commandLine.includes('--settings')) {
       win.webContents.send('open-settings-requested');
+    } else if (commandLine.includes('--assistant')) {
+      toggleAssistantWindow();
     }
   }
 });
 
+/**
+ * Crea o muestra la ventana del asistente de Lemon
+ */
+function createAssistantWindow() {
+  const { screen } = require('electron');
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const { width, height } = primaryDisplay.workAreaSize;
+  const { x, y } = primaryDisplay.workArea;
+
+  const assistantWidth = 700;
+  const assistantHeight = 150;
+
+  assistantWindow = new BrowserWindow({
+    width: assistantWidth,
+    height: assistantHeight,
+    x: Math.round(x + (width - assistantWidth) / 2),
+    y: Math.round(y + height - assistantHeight - 20), // Un poco más arriba de la barra de tareas
+    transparent: true,
+    frame: false,
+    resizable: false,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    show: false,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false
+    }
+  });
+
+  assistantWindow.loadFile('assistant.html');
+
+  assistantWindow.once('ready-to-show', () => {
+    assistantWindow.show();
+  });
+
+  assistantWindow.on('blur', () => {
+    assistantWindow.hide();
+  });
+
+  assistantWindow.on('closed', () => {
+    assistantWindow = null;
+  });
+}
+
+/** 
+ * Alterna la visibilidad del asistente
+ */
+function toggleAssistantWindow() {
+  if (assistantWindow) {
+    if (assistantWindow.isVisible()) {
+      assistantWindow.hide();
+    } else {
+      assistantWindow.show();
+      assistantWindow.focus();
+    }
+  } else {
+    createAssistantWindow();
+  }
+}
+
+/** 
+ * Configura los atajos de Windows (Navegador y Asistente)
+ */
+function setupWindowsDesktopShortcut() {
+  if (process.platform !== 'win32') return;
+
+  const appPath = process.execPath;
+  const psScript = `
+    $desktopPath = [Environment]::GetFolderPath('Desktop')
+    $browserLnk = Join-Path $desktopPath "Lemon Browser.lnk"
+    $assistantLnk = Join-Path $desktopPath "Lemon Assistant.lnk"
+    $shell = New-Object -COM WScript.Shell
+
+    # 1. Asegurar que el navegador normal NO tenga Ctrl+Alt+L
+    if (Test-Path $browserLnk) {
+        $shortcut = $shell.CreateShortcut($browserLnk)
+        if ($shortcut.Hotkey -eq "Ctrl+Alt+L") {
+            $shortcut.Hotkey = ""
+            $shortcut.Save()
+        }
+    }
+
+    # 2. Crear/Configurar el asistente con Ctrl+Alt+L
+    $shortcut = $shell.CreateShortcut($assistantLnk)
+    $shortcut.TargetPath = "${appPath}"
+    $shortcut.Arguments = "--assistant"
+    $shortcut.Hotkey = "Ctrl+Alt+L"
+    $shortcut.WindowStyle = 1
+    $shortcut.IconLocation = "${appPath},0"
+    $shortcut.Save()
+  `;
+
+  const encodedCommand = Buffer.from(psScript, 'utf16le').toString('base64');
+  exec(`powershell.exe -NoProfile -NonInteractive -WindowStyle Hidden -EncodedCommand ${encodedCommand}`, (error) => {
+    if (error) console.error('Error configurando atajos de Windows:', error);
+    else console.log('Atajos de Windows configurados correctamente.');
+  });
+}
+
 /** Inicialización de la app */
 app.whenReady().then(async () => {
+  setupWindowsDesktopShortcut();
+
+  if (isAssistantMode) {
+    createAssistantWindow();
+    return;
+  }
+
+  // Registrar atajo global cuando la app está abierta para abrir el asistente
+  globalShortcut.register('CommandOrControl+Alt+L', () => {
+    toggleAssistantWindow();
+  });
   await loadStoredExtensions();
   createWindow();
 
@@ -848,6 +1024,26 @@ app.whenReady().then(async () => {
       });
     }
   });
+});
+
+/** Guardar input del asistente y sobrescribir */
+ipcMain.on('assistant-save-input', (event, text) => {
+  try {
+    fs.writeFileSync(ASSISTANT_INPUT_FILE, text, 'utf8');
+    console.log(`Input guardado en: ${ASSISTANT_INPUT_FILE}`);
+  } catch (err) {
+    console.error('Error guardando input del asistente:', err);
+  }
+});
+
+/** Ocultar asistente */
+ipcMain.on('assistant-hide', () => {
+  if (assistantWindow) assistantWindow.hide();
+});
+
+/** Limpiar atajos globales al salir */
+app.on('will-quit', () => {
+  globalShortcut.unregisterAll();
 });
 
 /** Cerrar app cuando todas las ventanas se cierran (excepto en macOS) */
