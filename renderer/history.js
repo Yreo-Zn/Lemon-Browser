@@ -57,7 +57,7 @@ export function setupHistory() {
   });
 }
 
-// ── Show / Hide ─────────────────────────────────────────────────
+// ── Show / Hide  FALTA CONFIGURAR QUE SE MUESTRE CON CONTROL + G─────────────────────────────────────────────────
 
 export function showHistory() {
   if (!overlay) return;

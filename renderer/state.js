@@ -56,8 +56,9 @@ export const dom = {
   tutorialNext: null,
   tutorialSkip: null,
   savedPagesContainer: null,
-  savedPagesTrigger: null,
-  savedPagesTriggerInner: null,
+  tabsGalleryContainer: null,
+  libraryEdgeTrigger: null,
+  galleryEdgeTrigger: null,
   menuOverlay: null,
   coraxPanel: null,
 };
@@ -94,8 +95,9 @@ export function initDOM() {
   dom.tutorialNext = document.getElementById('tutorial-next');
   dom.tutorialSkip = document.getElementById('tutorial-skip');
   dom.savedPagesContainer = document.getElementById('saved-pages-container');
-  dom.savedPagesTrigger = document.getElementById('saved-pages-trigger');
-  dom.savedPagesTriggerInner = document.getElementById('saved-pages-trigger-inner');
+  dom.tabsGalleryContainer = document.getElementById('tabs-gallery-container');
+  dom.libraryEdgeTrigger = document.getElementById('library-edge-trigger');
+  dom.galleryEdgeTrigger = document.getElementById('gallery-edge-trigger');
   dom.menuOverlay = document.getElementById('menu-overlay');
   dom.coraxPanel = document.getElementById('corax-panel');
 }

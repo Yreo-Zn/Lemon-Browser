@@ -253,6 +253,18 @@ export function setupSearch() {
     }
   });
 
+  // Click event → Show open tabs gallery if pages exist (Per user request)
+  dom.searchBar.addEventListener('click', () => {
+    if (state.openPages && state.openPages.length > 0) {
+      import('./tabs.js').then(m => m.renderTabsGallery());
+      if (dom.tabsGalleryContainer) {
+        dom.tabsGalleryContainer.classList.remove('hidden');
+        dom.tabsGalleryContainer.classList.add('deployed');
+      }
+      setInteractive(true);
+    }
+  });
+
   // Engine selector
   dom.currentEngineBtn.addEventListener('click', (e) => {
     e.stopPropagation();

@@ -32,12 +32,14 @@ const boundsMap = new WeakMap();
 function centerWindow(win) {
   const primaryDisplay = screen.getPrimaryDisplay();
   const { width, height } = primaryDisplay.workAreaSize;
+  const targetW = Math.min(DEFAULT_WIDTH, Math.round(width * 0.9));
+  const targetH = Math.min(DEFAULT_HEIGHT, Math.round(height * 0.9));
 
   win.setBounds({
-    x: Math.round((width - DEFAULT_WIDTH) / 2),
-    y: Math.round((height - DEFAULT_HEIGHT) / 2),
-    width: DEFAULT_WIDTH,
-    height: DEFAULT_HEIGHT
+    x: Math.round((width - targetW) / 2),
+    y: Math.round((height - targetH) / 2),
+    width: targetW,
+    height: targetH
   });
 }
 
@@ -152,10 +154,17 @@ function handleInput(win, event, input) {
     return;
   }
 
-  // Ctrl+D → Bookmark current page
+  // Ctrl+D → Bookmark current page (Synapse Save)
   if (ctrl && !shift && key === 'd') {
     event.preventDefault();
-    win.webContents.send('browser-bookmark');
+    win.webContents.send('browser-save-page');
+    return;
+  }
+
+  // Ctrl+H → Toggle History Sidebar
+  if (ctrl && !shift && key === 'h') {
+    event.preventDefault();
+    win.webContents.send('browser-toggle-history');
     return;
   }
 
@@ -211,17 +220,17 @@ function handleInput(win, event, input) {
     return;
   }
 
-  // Ctrl+G → Find next
-  if (ctrl && !shift && key === 'g') {
+  // Ctrl+B → Toggle Library (Bookmarks)
+  if (ctrl && !shift && key === 'b') {
     event.preventDefault();
-    win.webContents.send('browser-find-next');
+    win.webContents.send('toggle-library');
     return;
   }
 
-  // Ctrl+Shift+G → Find previous
-  if (ctrl && shift && key === 'g') {
+  // Ctrl+G → Toggle Gallery (Tabs categorized)
+  if (ctrl && !shift && key === 'g') {
     event.preventDefault();
-    win.webContents.send('browser-find-prev');
+    win.webContents.send('toggle-gallery');
     return;
   }
 
@@ -497,6 +506,8 @@ function createWindow() {
     resizable: true,
     minimizable: true,
     maximizable: true,
+    minWidth: 400,
+    minHeight: 300,
     alwaysOnTop: false,
     skipTaskbar: false,
     title: 'Lemon Browser',
@@ -565,9 +576,9 @@ function createWindow() {
   win.loadFile(path.join(__dirname, '..', 'index.html'));
 
   win.once('ready-to-show', () => {
-    boundsMap.set(win, { x: Math.round((width - DEFAULT_WIDTH) / 2), y: Math.round((height - DEFAULT_HEIGHT) / 2), width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT });
-    win.maximize();
-    maximizedMap.set(win, true);
+    centerWindow(win);
+    boundsMap.set(win, win.getBounds());
+    maximizedMap.set(win, false);
     win.show();
   });
 

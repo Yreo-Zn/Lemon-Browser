@@ -10,11 +10,14 @@ import { saveGlobalSettings, getScrollbarCSS } from './settings-manager.js';
 import { hidePreview } from './search.js';
 import { showNavBar, hideNavBar, attachNavListeners, updateNavBar } from './nav-bar.js';
 import { recordNavigation } from './history.js';
+import { categorizeTab } from './utils.js';
 
 // ── Closed tabs stack (for Ctrl+Shift+T) ────────────────────────
 
 const closedTabsStack = [];
 const MAX_CLOSED_TABS = 20;
+
+
 
 // ── Recientes ───────────────────────────────────────────────────
 
@@ -85,8 +88,17 @@ export function renderSavedPages() {
     dom.savedPagesContainer.classList.remove('vertical');
   }
 
+  const isBrowsing = document.body.classList.contains('pages-open');
+  const isDeployed = dom.savedPagesContainer.classList.contains('deployed');
+
   if (state.savedPages.length > 0) {
-    dom.savedPagesContainer.classList.remove('hidden');
+    // Si estamos navegando, solo mostramos si está desplegado (sidebar)
+    // Si estamos en el home, lo mostramos siempre (horizontal)
+    if (!isBrowsing || isDeployed) {
+      dom.savedPagesContainer.classList.remove('hidden');
+    } else {
+      dom.savedPagesContainer.classList.add('hidden');
+    }
   } else {
     dom.savedPagesContainer.classList.add('hidden');
     return;
@@ -130,6 +142,64 @@ export function renderSavedPages() {
     };
 
     dom.savedPagesContainer.appendChild(item);
+  });
+}
+
+// ── Galería de Pestañas (Explorada y Categorizada) ──────────────
+
+export function renderTabsGallery() {
+  if (!dom.tabsGalleryContainer) return;
+  dom.tabsGalleryContainer.innerHTML = '';
+  
+  if (state.openPages.length === 0) {
+    dom.tabsGalleryContainer.classList.add('hidden');
+    return;
+  }
+  dom.tabsGalleryContainer.classList.remove('hidden');
+
+  // Agrupar por categorías
+  const groups = {};
+  state.openPages.forEach((page, index) => {
+    const url = page.webview ? page.webview.getURL() : page.url;
+    const cat = categorizeTab(url);
+    if (!groups[cat]) groups[cat] = [];
+    groups[cat].push({ page, index });
+  });
+
+  // Renderizar grupos
+  Object.keys(groups).sort().forEach(cat => {
+    const header = document.createElement('div');
+    header.className = 'gallery-category-header';
+    header.textContent = cat;
+    dom.tabsGalleryContainer.appendChild(header);
+
+    groups[cat].forEach(({ page, index }) => {
+      const item = document.createElement('div');
+      item.className = 'saved-page-item glass';
+      if (index === state.activePageIndex) item.classList.add('active');
+
+      const img = document.createElement('img');
+      img.src = page.favicon || 'https://www.google.com/favicon.ico';
+      img.onerror = () => { img.src = 'https://www.google.com/favicon.ico'; };
+
+      const nameSpan = document.createElement('span');
+      nameSpan.textContent = page.name || 'Sin título';
+      nameSpan.style.maxWidth = '150px';
+      nameSpan.style.overflow = 'hidden';
+      nameSpan.style.textOverflow = 'ellipsis';
+      nameSpan.style.whiteSpace = 'nowrap';
+
+      item.appendChild(img);
+      item.appendChild(nameSpan);
+
+      item.onclick = (e) => {
+        e.stopPropagation();
+        switchToPage(index);
+        dom.tabsGalleryContainer.classList.remove('deployed');
+      };
+
+      dom.tabsGalleryContainer.appendChild(item);
+    });
   });
 }
 
@@ -403,6 +473,7 @@ export function returnToHome() {
 
   if (dom.wrapper) {
     dom.wrapper.style.display = 'flex';
+    document.body.classList.add('search-bar-active');
     dom.searchBar.focus();
     dom.searchBar.select();
   }
@@ -410,6 +481,7 @@ export function returnToHome() {
   setInteractive(true);
   updateControlsMode(true, false);
   hideNavBar();
+  renderSavedPages();
 
   dom.searchBar.value = '';
   dom.barContainer.classList.remove('active-mode');
@@ -494,7 +566,9 @@ export function navigateTo(url) {
   // Mostrar browser
   dom.mainBrowserContainer.classList.remove('hidden');
   if (dom.closeSearchContainer) dom.closeSearchContainer.classList.remove('hidden');
+  document.body.classList.remove('search-bar-active');
   updateControlsMode(false);
+  renderSavedPages();
   dom.wrapper.style.display = 'none';
 
   // Nav bar

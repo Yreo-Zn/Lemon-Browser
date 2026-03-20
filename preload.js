@@ -121,11 +121,21 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('browser-home', () => callback()),
   onBrowserBackIfNotInput: (callback) =>
     ipcRenderer.on('browser-back-if-not-input', () => callback()),
+  onBrowserToggleHistory: (callback) =>
+    ipcRenderer.on('browser-toggle-history', () => callback()),
+  onBrowserSavePage: (callback) =>
+    ipcRenderer.on('browser-save-page', () => callback()),
+  onToggleLibrary: (callback) =>
+    ipcRenderer.on('toggle-library', () => callback()),
+  onToggleGallery: (callback) =>
+    ipcRenderer.on('toggle-gallery', () => callback()),
 
   // ── CoRax Bridge ────────────────────────────────────────────────
   coraxGetStatus: () => ipcRenderer.invoke('corax-get-status'),
   coraxGetSkills: () => ipcRenderer.invoke('corax-get-skills'),
   coraxExecute: (command) => ipcRenderer.invoke('corax-execute', command),
+  onBrowserOpenCommandSurface: (callback) =>
+    ipcRenderer.on('browser-open-command-surface', () => callback()),
   onCoraxAction: (callback) =>
     ipcRenderer.on('corax-action', (_e, action, ...args) => callback(action, ...args)),
   onConstitutionViolation: (callback) =>

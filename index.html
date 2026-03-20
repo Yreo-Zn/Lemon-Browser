@@ -56,9 +56,8 @@
     </div>
     <div id="menu-overlay" class="hidden"></div>
 
-    <div id="saved-pages-container" class="hidden">
-        <!-- JavaScript will populate this -->
-    </div>
+    <div id="saved-pages-container" class="hidden"></div>
+    <div id="tabs-gallery-container" class="hidden"></div>
 
     <div id="main-browser-container" class="hidden"></div>
 
@@ -87,31 +86,36 @@
     <!-- Command Surface — intelligent navigation overlay -->
     <div id="command-surface" class="hidden">
         <div id="command-backdrop"></div>
-        <div id="command-card">
-            <div id="command-page-ctx"></div>
-            <div id="command-input-row">
-                <span class="command-prompt">◎</span>
-                <input type="text" id="command-input" placeholder="Navega, busca o pide a CoRax..." autocomplete="off" spellcheck="false">
+        <div id="command-container">
+            <div id="command-card">
+                <div id="command-page-ctx"></div>
+                <div id="command-input-row">
+                    <span class="command-prompt">◎</span>
+                    <input type="text" id="command-input" placeholder="Navega, busca o pide a CoRax..." autocomplete="off" spellcheck="false">
+                </div>
+                <div id="command-actions">
+                    <button class="cmd-action" data-action="reload" title="Recargar página">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+                        <span>Recargar</span>
+                    </button>
+                    <button class="cmd-action" data-action="find" title="Buscar en página">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                        <span>Buscar</span>
+                    </button>
+                    <button class="cmd-action" data-action="copy" title="Copiar enlace">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                        <span>Copiar URL</span>
+                    </button>
+                    <button class="cmd-action" data-action="bookmarks" title="Marcadores">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                        <span>Marcadores</span>
+                    </button>
+                </div>
+                <div id="command-tabs-preview"></div>
             </div>
-            <div id="command-actions">
-                <button class="cmd-action" data-action="reload" title="Recargar página">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
-                    <span>Recargar</span>
-                </button>
-                <button class="cmd-action" data-action="find" title="Buscar en página">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-                    <span>Buscar</span>
-                </button>
-                <button class="cmd-action" data-action="copy" title="Copiar enlace">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-                    <span>Copiar URL</span>
-                </button>
-                <button class="cmd-action" data-action="corax" title="Panel CoRax">
-                    <span style="font-size:14px">◎</span>
-                    <span>CoRax</span>
-                </button>
+            <div id="command-bookmarks-panel" class="hidden">
+                <div id="command-bookmarks-preview"></div>
             </div>
-            <div id="command-tabs-preview"></div>
         </div>
     </div>
 
@@ -164,14 +168,8 @@
         </div>
     </div>
 
-    <div id="saved-pages-trigger" class="hidden">
-        <div id="saved-pages-trigger-inner" class="glass">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
-            </svg>
-            <span>Marcadores</span>
-        </div>
-    </div>
+    <div id="library-edge-trigger"></div>
+    <div id="gallery-edge-trigger"></div>
 
     <div id="drag-pill-container">
         <div id="drag-pill" class="glass">

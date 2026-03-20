@@ -402,7 +402,7 @@ const LEMON_CONFIG = {
   
   // Skill Registry
   skillRegistry: {
-    source: "file:///workspace-corax/Lemon-Browser/corax/skills",
+    source: "file:///C:/Users/denis/Documents/Proyecto Navegador/corax/skills",
     autoload: true,
     maxSkillsActive: 32,
     skippedCategories: []
@@ -703,7 +703,7 @@ Each evolution:
 
 ```bash
 # 1. Create master prompt file
-cat > workspace-corax/Lemon-Browser/SYSTEM_PROMPT.md << 'EOF'
+cat > "C:/Users/denis/Documents/Proyecto Navegador/SYSTEM_PROMPT.md" << 'EOF'
 [INSERT THIS ENTIRE DOCUMENT]
 EOF
 
@@ -713,7 +713,7 @@ EOF
     "lemon-browser": {
       "command": "node",
       "args": ["corax/mcp-servers/browser-tools/server.js"],
-      "systemPrompt": "file:///$(workspaceFolder)/SYSTEM_PROMPT.md"
+      "systemPrompt": "file:///C:/Users/denis/Documents/Proyecto Navegador/SYSTEM_PROMPT.md"
     }
   }
 }

@@ -332,6 +332,9 @@ export function setupIPCListeners() {
 
   window.electronAPI.onBrowserFocusSearch(() => {
     dom.wrapper.style.display = 'flex';
+    document.body.classList.add('search-bar-active');
+    updateControlsMode(false);
+    renderSavedPages();
     dom.searchBar.focus();
     dom.searchBar.select();
     setInteractive(true);
@@ -377,11 +380,16 @@ export function setupIPCListeners() {
     }
   });
 
-  window.electronAPI.onBrowserBookmark(() => {
+  window.electronAPI.onBrowserSavePage(() => {
     if (state.activePageIndex >= 0 && state.openPages[state.activePageIndex]) {
-      savePage(state.openPages[state.activePageIndex]);
+      import('./tabs.js').then(m => m.savePage(state.openPages[state.activePageIndex]));
     }
   });
+
+  window.electronAPI.onBrowserToggleHistory(() => {
+    import('./history.js').then(m => m.toggleHistory());
+  });
+
 
   window.electronAPI.onBrowserEscape(() => {
     // Close find bar if open

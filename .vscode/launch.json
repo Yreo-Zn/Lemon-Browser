@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": ".NET Core Launch (x64)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "C:/Users/denis/Documents/Proyecto Navegador/bin/x64/Debug/net8.0-windows/win-x64/LemonBrowser.exe",
+            "args": [],
+            "cwd": "C:/Users/denis/Documents/Proyecto Navegador",
+            "stopAtEntry": false,
+            "console": "internalConsole"
+        }
+    ]
+}

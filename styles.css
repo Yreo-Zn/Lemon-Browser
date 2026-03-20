@@ -13,6 +13,10 @@
     --trans-spring: 0.5s var(--ease-spring);
 }
 
+.hidden {
+    display: none !important;
+}
+
 /* Accessibility: Reduced and Disabled Animations */
 body.reduce-motion *,
 body.reduce-motion {
@@ -325,17 +329,17 @@ body:not(.pages-open) #synapse-bar {
     z-index: 99999;
     pointer-events: auto;
     -webkit-app-region: no-drag;
-    background: transparent;
+    background: rgba(0, 0, 0, 0.01); /* Nearly invisible, but enough to trigger hit testing */
 }
 
-.resize-n  { top: 0; left: 8px; right: 8px; height: 6px; cursor: n-resize; }
-.resize-s  { bottom: 0; left: 8px; right: 8px; height: 6px; cursor: s-resize; }
-.resize-e  { top: 8px; bottom: 8px; right: 0; width: 6px; cursor: e-resize; }
-.resize-w  { top: 8px; bottom: 8px; left: 0; width: 6px; cursor: w-resize; }
-.resize-nw { top: 0; left: 0; width: 10px; height: 10px; cursor: nw-resize; }
-.resize-ne { top: 0; right: 0; width: 10px; height: 10px; cursor: ne-resize; }
-.resize-sw { bottom: 0; left: 0; width: 10px; height: 10px; cursor: sw-resize; }
-.resize-se { bottom: 0; right: 0; width: 10px; height: 10px; cursor: se-resize; }
+.resize-n  { top: 0; left: 10px; right: 10px; height: 10px; cursor: n-resize; }
+.resize-s  { bottom: 0; left: 10px; right: 10px; height: 10px; cursor: s-resize; }
+.resize-e  { top: 10px; bottom: 10px; right: 0; width: 10px; cursor: e-resize; }
+.resize-w  { top: 10px; bottom: 10px; left: 0; width: 10px; cursor: w-resize; }
+.resize-nw { top: 0; left: 0; width: 15px; height: 15px; cursor: nw-resize; }
+.resize-ne { top: 0; right: 0; width: 15px; height: 15px; cursor: ne-resize; }
+.resize-sw { bottom: 0; left: 0; width: 15px; height: 15px; cursor: sw-resize; }
+.resize-se { bottom: 0; right: 0; width: 15px; height: 15px; cursor: se-resize; }
 
 body.is-maximized .resize-handle {
     display: none;
@@ -761,10 +765,59 @@ body.pages-open #synapse-bar::before {
     border: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5),
                 0 0 0 1px rgba(255, 255, 255, 0.04);
-    animation: command-in 0.25s var(--ease-out);
     display: flex;
     flex-direction: column;
     gap: 12px;
+}
+
+#command-container {
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+    z-index: 10002;
+    max-width: 95vw;
+    animation: command-in 0.25s var(--ease-out);
+}
+
+#command-bookmarks-panel {
+    width: 310px;
+    background: rgba(22, 22, 35, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    padding: 18px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    display: flex;
+    flex-direction: column;
+    animation: panel-in 0.3s var(--ease-out);
+    position: relative;
+    max-height: 80vh;
+}
+
+#command-bookmarks-panel.hidden {
+    display: none;
+}
+
+@keyframes panel-in {
+    from { opacity: 0; transform: translateX(20px) scale(0.98); }
+    to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+#command-bookmarks-preview {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow-y: auto;
+    padding-right: 6px;
+}
+
+#command-bookmarks-preview::-webkit-scrollbar {
+    width: 4px;
+}
+#command-bookmarks-preview::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
 }
 
 @keyframes command-in {
@@ -927,6 +980,62 @@ body.pages-open #synapse-bar::before {
     font-size: 10px;
     opacity: 0.5;
 }
+
+.cmd-bookmark-group {
+    margin-bottom: 12px;
+}
+
+.cmd-section-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    color: var(--accent-color);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    padding-left: 8px;
+    opacity: 0.7;
+}
+
+.cmd-bookmark-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 12px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cmd-bookmark-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: white;
+    transform: translateX(4px);
+}
+
+.cmd-bookmark-item img {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+}
+
+.cmd-bookmark-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cmd-bookmark-url {
+    font-size: 10px;
+    opacity: 0.4;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 
 /* Hide drag pill when browsing — synapse bar takes center stage */
 body.pages-open #drag-pill-container {
@@ -1498,27 +1607,86 @@ body.liquid-glass .search-dot.active {
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Vertical mode (Pages Open) */
-#saved-pages-container.vertical {
+/* ═══════════════════════════════════════════════════════════════
+   LEMON LIBRARY — Left Edge Sidebar
+   ═══════════════════════════════════════════════════════════════ */
+#saved-pages-container.vertical,
+#tabs-gallery-container.vertical {
     position: fixed;
-    top: 60px;
-    left: 20px;
-    flex-direction: column;
-    width: 250px;
-    max-height: calc(100vh - 120px);
-    overflow-y: auto;
-    background: rgba(30, 30, 30, 0.95);
+    top: 5px;
+    bottom: 5px;
+    width: 280px;
+    height: calc(100vh - 10px);
+    z-index: 10002;
+    background: rgba(15, 15, 15, 0.4);
+    backdrop-filter: blur(40px) saturate(180%);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 20px;
-    padding: 15px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-    transform: translateX(-320px);
+    padding: 60px 20px 20px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
     opacity: 0;
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.5s ease;
+    pointer-events: none;
+    overflow-y: auto;
 }
 
-#saved-pages-container.vertical.deployed {
+#saved-pages-container.vertical {
+    left: 0;
+    transform: translateX(-100%);
+    border-left: none;
+}
+
+#tabs-gallery-container.vertical {
+    right: 0;
+    transform: translateX(100%);
+    border-right: none;
+}
+
+#saved-pages-container.vertical.deployed,
+#tabs-gallery-container.vertical.deployed {
     transform: translateX(0);
     opacity: 1;
     pointer-events: auto;
+}
+
+.gallery-category-header {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    color: var(--accent-color);
+    margin-top: 15px;
+    margin-bottom: 5px;
+    padding-left: 5px;
+    text-transform: uppercase;
+    opacity: 0.9;
+}
+
+#saved-pages-container.vertical::before {
+    content: "BIBLIOTECA";
+    position: absolute;
+    top: 30px;
+    left: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--accent-color);
+    opacity: 0.8;
+}
+
+#tabs-gallery-container.vertical::before {
+    content: "GALERÍA";
+    position: absolute;
+    top: 30px;
+    left: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--accent-color);
+    opacity: 0.8;
 }
 
 .saved-page-item {
@@ -1581,74 +1749,37 @@ body.liquid-glass .search-dot.active {
     text-overflow: ellipsis;
 }
 
-/* Trigger for popup layout */
-#saved-pages-trigger {
+/* ═══════════════════════════════════════════════════════════════
+   LEMON BOOKMARKS TRIGGER — Sleek & Integrated
+   ═══════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════
+   EDGE TRIGGERS — Invisible zones for revealing panels
+   ═══════════════════════════════════════════════════════════════ */
+#library-edge-trigger {
     position: fixed;
-    top: -50px;
-    /* Shifted UP significantly to create a large safe zone */
-    left: 140px;
-    width: 170px;
-    height: 200px;
-    /* Huge height to allow free movement */
+    top: 0;
+    left: 0;
+    width: 15px;
+    height: 100vh;
     z-index: 10001;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
+    cursor: e-resize;
     pointer-events: auto;
-    transition: top var(--trans-spring);
-    /* Clip starting from 50px down, meaning the top 50px are hidden, but everything below is visible */
-    clip-path: inset(50px -100px -100px -100px);
 }
 
-body.is-maximized #saved-pages-trigger {
-    top: -50px;
-    /* Aligned to 0 visually */
+#gallery-edge-trigger {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 15px;
+    height: 100vh;
+    z-index: 10001;
+    cursor: w-resize;
+    pointer-events: auto;
 }
 
-body:not(.is-maximized) #saved-pages-trigger {
-    top: -20px;
-    /* Aligned to 30px visually (-50px + 30px displacement) */
-}
-
-#saved-pages-trigger-inner {
-    background: rgba(30, 30, 30, 0.9);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 25px;
-    padding: 5px 15px;
-    /* Height approx 28px */
-    color: white;
-    font-size: 12px;
-    font-weight: 600;
-    transform: translateY(15px);
-    /* Resting position: visually hidden behind the 50px clip path */
-    opacity: 0.5;
-    transition: transform var(--trans-spring), opacity 0.4s ease, background 0.4s ease, box-shadow 0.4s ease;
-    cursor: grab;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
-    user-select: none;
-    backdrop-filter: blur(10px);
-}
-
-#saved-pages-trigger-inner svg {
-    width: 13px;
-    height: 13px;
-    opacity: 0.9;
-}
-
-#saved-pages-trigger-inner:active {
-    cursor: grabbing;
-}
-
-#saved-pages-trigger:hover #saved-pages-trigger-inner {
-    transform: translateY(50px);
-    /* Moves down significantly to be fully visible */
-    opacity: 1;
-    background: var(--accent-color-dark);
-    box-shadow: 0 8px 30px var(--accent-color-medium);
-    transition: transform var(--trans-spring), opacity 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
+/* Delete old trigger styles */
+#saved-pages-trigger {
+   display: none !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════

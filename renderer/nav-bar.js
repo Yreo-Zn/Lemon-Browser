@@ -9,13 +9,14 @@
 import { state, dom } from './state.js';
 import { setInteractive } from './ghost-mode.js';
 import { toggleHistory } from './history.js';
+import { categorizeTab, esc } from './utils.js';
 
 // ── Internal DOM refs ───────────────────────────────────────────
 
 let synapseBar, synapseDomain, synapseBack, synapseForward, synapseCorax, synapseGlow;
 let synapseParticles, synapseStatus, synapseShield;
 let ambientEdge;
-let commandSurface, commandBackdrop, commandInput, commandPageCtx, commandTabsPreview;
+let commandSurface, commandBackdrop, commandInput, commandPageCtx, commandTabsPreview, commandBookmarksPreview, commandBookmarksPanel;
 
 // ── Setup ───────────────────────────────────────────────────────
 
@@ -35,7 +36,9 @@ export function setupNavBar() {
   commandBackdrop    = document.getElementById('command-backdrop');
   commandInput       = document.getElementById('command-input');
   commandPageCtx     = document.getElementById('command-page-ctx');
-  commandTabsPreview = document.getElementById('command-tabs-preview');
+  commandTabsPreview      = document.getElementById('command-tabs-preview');
+  commandBookmarksPreview = document.getElementById('command-bookmarks-preview');
+  commandBookmarksPanel   = document.getElementById('command-bookmarks-panel');
 
   if (!synapseBar) return;
 
@@ -72,22 +75,7 @@ export function setupNavBar() {
   // Command Surface
   initCommandSurface();
 
-  // Ctrl+L → Command Surface (when browsing)
-  document.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'l' && state.openPages.length > 0) {
-      e.preventDefault();
-      if (commandSurface?.classList.contains('hidden')) {
-        openCommandSurface();
-      } else {
-        closeCommandSurface();
-      }
-    }
-    // Ctrl+H → Toggle History
-    if ((e.ctrlKey || e.metaKey) && e.key === 'h') {
-      e.preventDefault();
-      toggleHistory();
-    }
-  });
+  // Global shortcuts handled via Main Process IPC (unificado)
 }
 
 // ── Particle System — ambient neural drift ──────────────────────
@@ -145,6 +133,7 @@ function openCommandSurface() {
   if (!commandSurface) return;
   commandSurface.classList.remove('hidden');
   commandInput.value = '';
+  if (commandBookmarksPanel) commandBookmarksPanel.classList.add('hidden');
 
   const wv = getActiveWebview();
   if (wv) {
@@ -155,6 +144,7 @@ function openCommandSurface() {
 
   refreshPageContext();
   refreshTabsPreview();
+  refreshBookmarksPreview();
   requestAnimationFrame(() => commandInput.focus());
 }
 
@@ -207,6 +197,57 @@ function refreshTabsPreview() {
       const idx = parseInt(item.dataset.tabIdx, 10);
       closeCommandSurface();
       import('./tabs.js').then(m => m.switchToPage(idx));
+    });
+  });
+}
+
+function refreshBookmarksPreview() {
+  if (!commandBookmarksPreview) return;
+  
+  if (state.savedPages.length === 0) {
+    commandBookmarksPreview.innerHTML = '<div class="cmd-section-label">Sin marcadores</div>';
+    return;
+  }
+
+  // Grupar por categorías
+  const groups = {};
+  state.savedPages.forEach(b => {
+    const cat = categorizeTab(b.url);
+    if (!groups[cat]) groups[cat] = [];
+    groups[cat].push(b);
+  });
+
+  const sortedCats = Object.keys(groups).sort();
+  
+  commandBookmarksPreview.innerHTML = sortedCats.map(cat => {
+    const bookmarksHTML = groups[cat].map(b => {
+      const icon = b.icon 
+        ? `<img src="${esc(b.icon)}" alt="">`
+        : '<span style="width:14px;height:14px;border-radius:3px;background:var(--accent-color-light);display:inline-block"></span>';
+      
+      let displayUrl = '';
+      try { displayUrl = new URL(b.url).hostname; } catch(_) { displayUrl = b.url; }
+
+      return `<div class="cmd-bookmark-item" data-bookmark-url="${esc(b.url)}">
+        ${icon}
+        <span class="cmd-bookmark-name">${esc(b.name)}</span>
+        <span class="cmd-bookmark-url">${esc(displayUrl)}</span>
+      </div>`;
+    }).join('');
+
+    return `
+      <div class="cmd-bookmark-group">
+        <div class="cmd-section-label">${esc(cat)}</div>
+        ${bookmarksHTML}
+      </div>
+    `;
+  }).join('');
+
+  commandBookmarksPreview.querySelectorAll('.cmd-bookmark-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const url = item.dataset.bookmarkUrl;
+      closeCommandSurface();
+      import('./tabs.js').then(m => m.navigateTo(url));
     });
   });
 }
@@ -269,6 +310,12 @@ function handleAction(action) {
     case 'corax':
       closeCommandSurface();
       document.getElementById('corax-toggle-btn')?.click();
+      break;
+    case 'bookmarks':
+      if (commandBookmarksPanel) {
+        const isHidden = commandBookmarksPanel.classList.toggle('hidden');
+        if (!isHidden) refreshBookmarksPreview();
+      }
       break;
   }
 }
@@ -374,8 +421,4 @@ function formatDomain(url) {
   }
 }
 
-function esc(str) {
-  const d = document.createElement('span');
-  d.textContent = str ?? '';
-  return d.innerHTML;
-}
+

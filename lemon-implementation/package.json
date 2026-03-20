@@ -1,6 +1,6 @@
 {
   "name": "@lemon-browser/constitution-implementation",
-  "version": "1.0.0",
+  "version": "1.3.0",
   "description": "CoRax v1 Post-ASI Constitution implementation for Lemon Browser",
   "type": "module",
   "main": "src/index.js",
